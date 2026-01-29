@@ -1,20 +1,22 @@
-import NextAuth from 'next-auth'
-import Google from 'next-auth/providers/google'
+import NextAuth, { NextAuthOptions, getServerSession } from 'next-auth'
+import GoogleProvider from 'next-auth/providers/google'
+import { PrismaAdapter } from '@next-auth/prisma-adapter'
+import { prisma } from './prisma'
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
-    Google({
+    GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || ''
     })
   ],
   session: { strategy: 'jwt' },
   callbacks: {
-    async jwt({ token, account, user, profile }) {
-      if (account) {
-        const admins = (process.env.ADMIN_EMAILS || '').split(',').map(x => x.trim()).filter(Boolean)
-        const email = (user as any)?.email || (profile as any)?.email || token.email
-        token.role = admins.includes(email || '') ? 'ADMIN' : 'RESIDENT'
+    async jwt({ token }) {
+      if (token.email) {
+        const user = await prisma.user.findUnique({ where: { email: token.email } })
+        if (user) token.role = user.role
       }
       return token
     },
@@ -24,8 +26,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         role: (token as any).role
       } as any
       return session
+    },
+    async signIn({ user }) {
+      const admins = (process.env.ADMIN_EMAILS || '').split(',').map(x => x.trim()).filter(Boolean)
+      if (user?.email && admins.includes(user.email)) {
+        await prisma.user.updateMany({ where: { email: user.email }, data: { role: 'ADMIN' } })
+      }
+      return true
     }
   },
-  trustHost: true,
   secret: process.env.NEXTAUTH_SECRET
-})
+}
+
+const handler = NextAuth(authOptions)
+export { handler as GET, handler as POST }
+export async function auth() {
+  return getServerSession(authOptions)
+}
