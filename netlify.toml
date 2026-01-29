@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[template.environment]
+  DATABASE_URL = "Postgres connection string"
+  NEXTAUTH_URL = "https://your-site.netlify.app"
+  NEXTAUTH_SECRET = "complex-random-string"
+  GOOGLE_CLIENT_ID = "google-client-id"
+  GOOGLE_CLIENT_SECRET = "google-client-secret"
