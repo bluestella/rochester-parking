@@ -4,14 +4,15 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import { db } from './db'
 import { eq } from 'drizzle-orm'
 import { users } from '../db/schema'
+import { getEnv } from './env'
 
 export function getAuthOptions(): NextAuthOptions {
   return {
     adapter: DrizzleAdapter(db),
     providers: [
       GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID || '',
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || ''
+        clientId: getEnv('GOOGLE_CLIENT_ID') || '',
+        clientSecret: getEnv('GOOGLE_CLIENT_SECRET') || ''
       })
     ],
     session: { strategy: 'jwt' },
@@ -33,7 +34,7 @@ export function getAuthOptions(): NextAuthOptions {
         return session
       },
       async signIn({ user }) {
-        const admins = (process.env.ADMIN_EMAILS || '').split(',').map(x => x.trim()).filter(Boolean)
+        const admins = (getEnv('ADMIN_EMAILS') || '').split(',').map(x => x.trim()).filter(Boolean)
         if (user?.email && admins.includes(user.email)) {
           try {
             await db.update(users).set({ role: 'ADMIN' } as any).where(eq(users.email, user.email))
@@ -43,10 +44,15 @@ export function getAuthOptions(): NextAuthOptions {
         return true
       }
     },
-    secret: process.env.NEXTAUTH_SECRET
+    secret: getEnv('NEXTAUTH_SECRET')
   }
 }
 
 export async function auth() {
-  return getServerSession(getAuthOptions())
+  try {
+    return await getServerSession(getAuthOptions())
+  } catch (err) {
+    console.error(err)
+    return null
+  }
 }

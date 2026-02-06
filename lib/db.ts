@@ -1,9 +1,10 @@
 import { neon } from '@neondatabase/serverless'
 import { drizzle } from 'drizzle-orm/neon-http'
 import * as schema from '../db/schema'
+import { getEnv } from './env'
 
 function getConnectionString() {
-  return process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL || ''
+  return getEnv('NETLIFY_DATABASE_URL') || getEnv('DATABASE_URL') || ''
 }
 
 let _db: any | undefined
@@ -13,6 +14,11 @@ function getDb() {
   const connectionString = getConnectionString()
   if (!connectionString) {
     throw new Error('Missing NETLIFY_DATABASE_URL or DATABASE_URL')
+  }
+  try {
+    new URL(connectionString)
+  } catch {
+    throw new Error('Invalid NETLIFY_DATABASE_URL or DATABASE_URL')
   }
   _db = drizzle(neon(connectionString), { schema })
   return _db
