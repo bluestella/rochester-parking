@@ -1,14 +1,16 @@
 import { auth } from '../../server-auth'
-import { prisma } from '../../../lib/prisma'
+import { db } from '../../../lib/db'
+import { users, parkingRecords } from '../../../db/schema'
+import { eq, desc } from 'drizzle-orm'
 
 export default async function ResidentHistory() {
   const session = await auth()
   if (!session) return null
-  const user = await prisma.user.findUnique({ where: { email: session.user?.email || '' } })
+  const user = await db.query.users.findFirst({ where: eq(users.email, session.user?.email || '') })
   if (!user) return null
-  const records = await prisma.parkingRecord.findMany({
-    where: { residentId: user.id },
-    orderBy: { entryTimestamp: 'desc' }
+  const records = await db.query.parkingRecords.findMany({
+    where: eq(parkingRecords.residentId, user.id),
+    orderBy: [desc(parkingRecords.entryTimestamp)]
   })
   return (
     <main style={{ padding: 24 }}>
@@ -17,8 +19,8 @@ export default async function ResidentHistory() {
         {records.map(r => (
           <li key={r.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
             <span>{r.plateNumber}</span>
-            <span>{new Date(r.entryTimestamp).toLocaleString()}</span>
-            <span>{r.exitTimestamp ? new Date(r.exitTimestamp).toLocaleString() : 'Active'}</span>
+            <span>{r.entryTimestamp?.toLocaleString()}</span>
+            <span>{r.exitTimestamp ? r.exitTimestamp.toLocaleString() : 'Active'}</span>
           </li>
         ))}
       </ul>
