@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { auth } from '../../server-auth'
-import { prisma } from '../../../lib/prisma'
+import { db } from '../../../lib/db'
+import { parkingRecords, users } from '../../../db/schema'
+import { desc, eq } from 'drizzle-orm'
 import { ensureCurrentUser } from '../../../lib/user'
 
 export async function GET() {
@@ -10,15 +12,15 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const role = user.role
   if (role === 'RESIDENT') {
-    const records = await prisma.parkingRecord.findMany({
-      where: { residentId: user.id },
-      orderBy: { entryTimestamp: 'desc' }
+    const records = await db.query.parkingRecords.findMany({
+      where: eq(parkingRecords.residentId, user.id),
+      orderBy: [desc(parkingRecords.entryTimestamp)]
     })
     return NextResponse.json(records)
   }
-  const records = await prisma.parkingRecord.findMany({
-    orderBy: { entryTimestamp: 'desc' },
-    take: 200
+  const records = await db.query.parkingRecords.findMany({
+    orderBy: [desc(parkingRecords.entryTimestamp)],
+    limit: 200
   })
   return NextResponse.json(records)
 }
@@ -31,20 +33,18 @@ export async function POST(req: Request) {
   if (user.role === 'RESIDENT') return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   const body = await req.json()
   const { plateNumber, buildingName, unitNumber, codename, residentEmail } = body
-  let residentId: string | undefined = undefined
+  let residentId: string | undefined | null = undefined
   if (residentEmail) {
-    const resident = await prisma.user.findUnique({ where: { email: residentEmail } })
+    const resident = await db.query.users.findFirst({ where: eq(users.email, residentEmail) })
     if (resident) residentId = resident.id
   }
-  const record = await prisma.parkingRecord.create({
-    data: {
-      plateNumber,
-      buildingName,
-      unitNumber,
-      codename,
-      residentId,
-      createdById: user.id
-    }
-  })
+  const [record] = await db.insert(parkingRecords).values({
+    plateNumber,
+    buildingName,
+    unitNumber,
+    codename,
+    residentId: residentId || null,
+    createdById: user.id
+  }).returning()
   return NextResponse.json(record, { status: 201 })
 }

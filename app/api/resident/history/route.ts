@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/prisma'
+import { db } from '../../../../lib/db'
+import { parkingRecords } from '../../../../db/schema'
+import { desc, eq } from 'drizzle-orm'
 import { auth } from '../../../server-auth'
 import { ensureCurrentUser } from '../../../../lib/user'
 
@@ -8,9 +10,9 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const user = await ensureCurrentUser(session)
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  const records = await prisma.parkingRecord.findMany({
-    where: { residentId: user.id },
-    orderBy: { entryTimestamp: 'desc' }
+  const records = await db.query.parkingRecords.findMany({
+    where: eq(parkingRecords.residentId, user.id),
+    orderBy: [desc(parkingRecords.entryTimestamp)]
   })
   return NextResponse.json(records)
 }

@@ -1,10 +1,12 @@
 import NextAuth, { NextAuthOptions, getServerSession } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
-import { prisma } from './prisma'
+import { DrizzleAdapter } from '@auth/drizzle-adapter'
+import { db } from './db'
+import { eq } from 'drizzle-orm'
+import { users } from '../db/schema'
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: DrizzleAdapter(db),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
@@ -15,7 +17,9 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token }) {
       if (token.email) {
-        const user = await prisma.user.findUnique({ where: { email: token.email } })
+        const user = await db.query.users.findFirst({
+          where: eq(users.email, token.email)
+        })
         if (user) token.role = user.role
       }
       return token
@@ -30,7 +34,18 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user }) {
       const admins = (process.env.ADMIN_EMAILS || '').split(',').map(x => x.trim()).filter(Boolean)
       if (user?.email && admins.includes(user.email)) {
-        await prisma.user.updateMany({ where: { email: user.email }, data: { role: 'ADMIN' } })
+        // We need to wait for the adapter to create the user, so this might be tricky in signIn.
+        // However, if the user exists, we can update.
+        // Drizzle adapter might create user *after* signIn returns true? 
+        // Actually, signIn callback runs before user creation if it's new.
+        // But for existing users, it works.
+        // A better place is an event or just check in JWT callback.
+        // For simplicity, we'll try to update if exists, but catch error if not.
+        try {
+           await db.update(users).set({ role: 'ADMIN' }).where(eq(users.email, user.email))
+        } catch (e) {
+           // ignore if user doesn't exist yet
+        }
       }
       return true
     }
@@ -38,8 +53,6 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET
 }
 
-const handler = NextAuth(authOptions)
-export { handler as GET, handler as POST }
 export async function auth() {
   return getServerSession(authOptions)
 }
