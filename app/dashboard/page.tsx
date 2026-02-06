@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { auth } from '../server-auth'
 
+export const dynamic = 'force-dynamic'
+
 export default async function Dashboard() {
   const session = await auth()
   if (!session) {

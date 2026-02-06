@@ -5,6 +5,8 @@ import { parkingRecords, users } from '../../../db/schema'
 import { desc, eq } from 'drizzle-orm'
 import { ensureCurrentUser } from '../../../lib/user'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -45,6 +47,6 @@ export async function POST(req: Request) {
     codename,
     residentId: residentId || null,
     createdById: user.id
-  }).returning()
+  } as any).returning()
   return NextResponse.json(record, { status: 201 })
 }

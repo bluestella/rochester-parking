@@ -5,6 +5,8 @@ import { eq } from 'drizzle-orm'
 import { auth } from '../../../../server-auth'
 import { ensureCurrentUser } from '../../../../../lib/user'
 
+export const dynamic = 'force-dynamic'
+
 function forbidden() {
   return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 }
@@ -20,7 +22,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     role: body.role,
     buildingName: body.buildingName,
     unitNumber: body.unitNumber
-  }).where(eq(users.id, params.id)).returning()
+  } as any).where(eq(users.id, params.id)).returning()
   return NextResponse.json(updated)
 }
 

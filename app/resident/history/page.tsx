@@ -3,6 +3,8 @@ import { db } from '../../../lib/db'
 import { users, parkingRecords } from '../../../db/schema'
 import { eq, desc } from 'drizzle-orm'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ResidentHistory() {
   const session = await auth()
   if (!session) return null

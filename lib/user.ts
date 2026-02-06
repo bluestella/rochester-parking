@@ -18,7 +18,7 @@ export async function ensureCurrentUser(session: Session | null) {
     email,
     name: session.user.name || email,
     image: session.user.image || undefined
-  }).returning()
+  } as any).returning()
   
   return created
 }

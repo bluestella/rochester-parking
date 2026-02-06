@@ -5,6 +5,8 @@ import { desc } from 'drizzle-orm'
 import { auth } from '../../../server-auth'
 import { ensureCurrentUser } from '../../../../lib/user'
 
+export const dynamic = 'force-dynamic'
+
 function forbidden() {
   return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 }
@@ -31,6 +33,6 @@ export async function POST(req: Request) {
     role: body.role,
     buildingName: body.buildingName,
     unitNumber: body.unitNumber
-  }).returning()
+  } as any).returning()
   return NextResponse.json(created, { status: 201 })
 }

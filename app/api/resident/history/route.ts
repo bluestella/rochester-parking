@@ -5,6 +5,8 @@ import { desc, eq } from 'drizzle-orm'
 import { auth } from '../../../server-auth'
 import { ensureCurrentUser } from '../../../../lib/user'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })

@@ -4,6 +4,8 @@ import { parkingRecords } from '../../db/schema'
 import { desc, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ParkingList() {
   const session = await auth()
   if (!session) return null
@@ -15,7 +17,7 @@ export default async function ParkingList() {
   async function exit(id: string) {
     'use server'
     await db.update(parkingRecords)
-      .set({ status: 'EXITED', exitTimestamp: new Date() })
+      .set({ status: 'EXITED', exitTimestamp: new Date() } as any)
       .where(eq(parkingRecords.id, id))
     revalidatePath('/parking')
   }

@@ -5,6 +5,8 @@ import { eq } from 'drizzle-orm'
 import { auth } from '../../../server-auth'
 import { ensureCurrentUser } from '../../../../lib/user'
 
+export const dynamic = 'force-dynamic'
+
 export async function PATCH(_: Request, { params }: { params: { id: string } }) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -14,6 +16,6 @@ export async function PATCH(_: Request, { params }: { params: { id: string } }) 
   const [record] = await db.update(parkingRecords).set({
     status: 'EXITED',
     exitTimestamp: new Date()
-  }).where(eq(parkingRecords.id, params.id)).returning()
+  } as any).where(eq(parkingRecords.id, params.id)).returning()
   return NextResponse.json(record)
 }
