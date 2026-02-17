@@ -17,34 +17,39 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password are required');
         }
 
-        await connectDB();
+        try {
+          await connectDB();
 
-        const user = await User.findOne({
-          email: credentials.email.toLowerCase(),
-          isActive: true,
-        }).select('+passwordHash');
+          const user = await User.findOne({
+            email: credentials.email.toLowerCase(),
+            isActive: true,
+          }).select('+passwordHash');
 
-        if (!user) {
-          throw new Error('Invalid email or password');
+          if (!user) {
+            throw new Error('Invalid email or password');
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.passwordHash
+          );
+
+          if (!isPasswordValid) {
+            throw new Error('Invalid email or password');
+          }
+
+          return {
+            id: user._id.toString(),
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            unitNumber: user.unitNumber,
+            buildingName: user.buildingName,
+          };
+        } catch (error) {
+          console.error('Auth error:', error);
+          throw error;
         }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.passwordHash
-        );
-
-        if (!isPasswordValid) {
-          throw new Error('Invalid email or password');
-        }
-
-        return {
-          id: user._id.toString(),
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          unitNumber: user.unitNumber,
-          buildingName: user.buildingName,
-        };
       },
     }),
   ],
@@ -52,6 +57,7 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 24 * 60 * 60, // 24 hours
   },
+  debug: process.env.NODE_ENV === 'development',
   pages: {
     signIn: '/login',
     error: '/login',

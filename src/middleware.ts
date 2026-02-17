@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
 
     const token = await getToken({
       req: request,
-      secret: process.env.NEXTAUTH_SECRET,
+      secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-dev',
     });
 
     // Check if user is authenticated
@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
   // Handle page routes
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-dev',
   });
 
   // Check if trying to access login page while authenticated
