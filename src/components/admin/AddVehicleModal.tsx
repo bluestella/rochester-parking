@@ -30,6 +30,14 @@ interface AddVehicleModalProps {
   onSuccess: () => void;
 }
 
+interface Resident {
+  _id: string;
+  name: string;
+  email: string;
+  unitNumber?: string;
+  buildingName?: string;
+}
+
 export function AddVehicleModal({
   open,
   onOpenChange,
@@ -37,13 +45,7 @@ export function AddVehicleModal({
 }: AddVehicleModalProps) {
   const { buildings, loading: loadingBuildings } = useBuildings();
   const [loading, setLoading] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<{
-    _id: string;
-    name: string;
-    email: string;
-    buildingName?: string;
-    unitNumber?: string;
-  } | null>(null);
+  const [selectedUser, setSelectedUser] = useState<Resident | null>(null);
 
   const [formData, setFormData] = useState({
     plateNumber: '',
@@ -103,7 +105,7 @@ export function AddVehicleModal({
     setSelectedUser(null);
   };
 
-  const handleUserSelect = (user: any) => {
+  const handleUserSelect = (user: Resident) => {
     setSelectedUser(user);
     setFormData(prev => ({
       ...prev,

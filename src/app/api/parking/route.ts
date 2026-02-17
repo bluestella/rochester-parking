@@ -9,7 +9,7 @@ import {
 
 // GET /api/parking - Get all parking records with filters
 export async function GET(request: NextRequest) {
-  const { error, session } = await requirePermission('parking:read');
+  const { error } = await requirePermission('parking:read');
   if (error) return error;
 
   try {

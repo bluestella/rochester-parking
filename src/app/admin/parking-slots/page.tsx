@@ -76,10 +76,6 @@ export default function AdminParkingSlotsPage() {
     setFilters((prev) => ({ ...prev, search, page: 1 }));
   };
 
-  const handleBuildingFilter = (buildingName: string) => {
-    setFilters((prev) => ({ ...prev, buildingName, page: 1 }));
-  };
-
   const handleStatusFilter = (status: string) => {
     setFilters((prev) => ({ ...prev, isOccupied: status, page: 1 }));
   };
@@ -112,7 +108,6 @@ export default function AdminParkingSlotsPage() {
         pagination={pagination}
         onPageChange={handlePageChange}
         onSearch={handleSearch}
-        onBuildingFilter={handleBuildingFilter}
         onStatusFilter={handleStatusFilter}
         onRefresh={fetchSlots}
       />

@@ -6,7 +6,7 @@ import { createVehicleSchema, paginationSchema } from '@/lib/validations';
 
 // GET /api/vehicles - Get all vehicles (Admin/Guard)
 export async function GET(request: NextRequest) {
-  const { error, session } = await requirePermission('vehicles:read');
+  const { error } = await requirePermission('vehicles:read');
   if (error) return error;
 
   try {

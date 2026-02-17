@@ -11,7 +11,7 @@ interface RouteParams {
 
 // GET /api/parking/[id] - Get single parking record
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requirePermission('parking:read');
+  const { error } = await requirePermission('parking:read');
   if (error) return error;
 
   try {

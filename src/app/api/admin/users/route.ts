@@ -7,7 +7,7 @@ import { createUserSchema, paginationSchema } from '@/lib/validations';
 
 // GET /api/admin/users - Get all users
 export async function GET(request: NextRequest) {
-  const { error, session } = await requireRole(['admin']);
+  const { error } = await requireRole(['admin']);
   if (error) return error;
 
   try {
@@ -136,10 +136,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Return user without password hash
-    const { passwordHash: _, ...userWithoutPassword } = user.toObject();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userObj = user.toObject() as Record<string, any>;
+    delete userObj.passwordHash;
 
     return NextResponse.json(
-      { success: true, data: userWithoutPassword },
+      { success: true, data: userObj },
       { status: 201 }
     );
   } catch (err) {

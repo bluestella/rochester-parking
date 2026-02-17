@@ -5,7 +5,7 @@ import { requirePermission } from '@/lib/rbac';
 import { createVehicleSchema } from '@/lib/validations';
 
 // GET /api/resident/vehicles - Get own vehicles
-export async function GET(request: NextRequest) {
+export async function GET() {
   const { error, session } = await requirePermission('vehicles:read_own');
   if (error) return error;
 

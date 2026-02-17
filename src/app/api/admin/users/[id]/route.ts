@@ -12,7 +12,7 @@ interface RouteParams {
 
 // GET /api/admin/users/[id] - Get single user
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requireRole(['admin']);
+  const { error } = await requireRole(['admin']);
   if (error) return error;
 
   try {

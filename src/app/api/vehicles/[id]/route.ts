@@ -11,7 +11,7 @@ interface RouteParams {
 
 // GET /api/vehicles/[id] - Get single vehicle
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requirePermission('vehicles:read');
+  const { error } = await requirePermission('vehicles:read');
   if (error) return error;
 
   try {

@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       const exitTime = record.exitTimestamp
         ? new Date(record.exitTimestamp).toLocaleString()
         : '';
-      const createdBy = (record.createdBy as any)?.name || 'Unknown';
+      const createdBy = ((record.createdBy as unknown) as { name: string })?.name || 'Unknown';
       const duration = record.duration || '';
 
       return [

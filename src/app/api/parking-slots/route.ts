@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/parking-slots - Create parking slot (Admin only)
 export async function POST(request: NextRequest) {
-  const { error, session } = await requireRole(['admin']);
+  const { error } = await requireRole(['admin']);
   if (error) return error;
 
   try {

@@ -138,7 +138,7 @@ export default function ResidentHistoryPage() {
       window.URL.revokeObjectURL(url);
 
       toast.success('History exported successfully');
-    } catch (err) {
+    } catch {
       toast.error('Failed to export history');
     } finally {
       setExporting(false);
