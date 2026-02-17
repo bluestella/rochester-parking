@@ -27,7 +27,9 @@ import {
   ChevronRight,
   Car,
   Loader2,
+  Plus,
 } from 'lucide-react';
+import { AddVehicleModal } from '@/components/admin/AddVehicleModal';
 
 interface Vehicle {
   _id: string;
@@ -74,6 +76,7 @@ export default function AdminVehiclesPage() {
     page: 1,
   });
   const [searchInput, setSearchInput] = useState('');
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   const fetchVehicles = useCallback(async () => {
     setLoading(true);
@@ -139,14 +142,20 @@ export default function AdminVehiclesPage() {
             View all registered vehicles by residents
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={fetchVehicles}
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={fetchVehicles}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button onClick={() => setAddModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Vehicle
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -282,6 +291,12 @@ export default function AdminVehiclesPage() {
           </div>
         </div>
       )}
+
+      <AddVehicleModal
+        open={addModalOpen}
+        onOpenChange={setAddModalOpen}
+        onSuccess={fetchVehicles}
+      />
     </div>
   );
 }

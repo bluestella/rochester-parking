@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
+    const onlyUsers = searchParams.get('onlyUsers') === 'true';
 
     if (search.length < 2) {
       return NextResponse.json({
@@ -34,6 +35,13 @@ export async function GET(request: NextRequest) {
       .select('_id name email unitNumber buildingName')
       .limit(10)
       .lean();
+
+    if (onlyUsers) {
+      return NextResponse.json({
+        success: true,
+        data: residents,
+      });
+    }
 
     // Get vehicles for each resident
     const residentIds = residents.map((r) => r._id);
