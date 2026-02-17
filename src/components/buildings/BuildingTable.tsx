@@ -25,31 +25,30 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UserModal } from './UserModal';
+import { BuildingModal } from './BuildingModal';
 import {
   Search,
   MoreVertical,
   Pencil,
   Trash2,
-  UserPlus,
+  Building2,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface User {
+interface Building {
   _id: string;
   name: string;
-  email: string;
-  role: 'admin' | 'guard' | 'resident';
-  unitNumber?: string;
-  buildingName?: string;
+  code: string;
+  address?: string;
+  floors: number;
   isActive: boolean;
   createdAt: string;
 }
 
-interface UserTableProps {
-  users: User[];
+interface BuildingTableProps {
+  buildings: Building[];
   pagination: {
     page: number;
     limit: number;
@@ -58,44 +57,44 @@ interface UserTableProps {
   };
   onPageChange: (page: number) => void;
   onSearch: (search: string) => void;
-  onRoleFilter: (role: string) => void;
+  onStatusFilter: (status: string) => void;
   onRefresh: () => void;
 }
 
-export function UserTable({
-  users,
+export function BuildingTable({
+  buildings,
   pagination,
   onPageChange,
   onSearch,
-  onRoleFilter,
+  onStatusFilter,
   onRefresh,
-}: UserTableProps) {
+}: BuildingTableProps) {
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(search);
   };
 
-  const handleEdit = (user: User) => {
-    setSelectedUser(user);
+  const handleEdit = (building: Building) => {
+    setSelectedBuilding(building);
     setModalOpen(true);
   };
 
   const handleAdd = () => {
-    setSelectedUser(null);
+    setSelectedBuilding(null);
     setModalOpen(true);
   };
 
-  const handleDelete = async (user: User) => {
-    if (!confirm(`Are you sure you want to deactivate ${user.name}?`)) {
+  const handleDelete = async (building: Building) => {
+    if (!confirm(`Are you sure you want to deactivate ${building.name}?`)) {
       return;
     }
 
     try {
-      const res = await fetch(`/api/admin/users/${user._id}`, {
+      const res = await fetch(`/api/admin/buildings/${building._id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -103,26 +102,13 @@ export function UserTable({
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to delete user');
+        throw new Error(data.error || 'Failed to delete building');
       }
 
-      toast.success('User deactivated successfully');
+      toast.success('Building deactivated successfully');
       onRefresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'An error occurred');
-    }
-  };
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Badge className="bg-purple-100 text-purple-800">Admin</Badge>;
-      case 'guard':
-        return <Badge className="bg-blue-100 text-blue-800">Guard</Badge>;
-      case 'resident':
-        return <Badge className="bg-green-100 text-green-800">Resident</Badge>;
-      default:
-        return <Badge variant="secondary">{role}</Badge>;
     }
   };
 
@@ -142,7 +128,7 @@ export function UserTable({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or email..."
+              placeholder="Search by name or code..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -152,20 +138,19 @@ export function UserTable({
             Search
           </Button>
         </form>
-        <Select onValueChange={onRoleFilter} defaultValue="all">
+        <Select onValueChange={onStatusFilter} defaultValue="all">
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Role" />
+            <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="guard">Guard</SelectItem>
-            <SelectItem value="resident">Resident</SelectItem>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
         <Button onClick={handleAdd}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add User
+          <Building2 className="h-4 w-4 mr-2" />
+          Add Building
         </Button>
       </div>
 
@@ -175,42 +160,42 @@ export function UserTable({
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead className="hidden sm:table-cell">Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead className="hidden md:table-cell">Building/Unit</TableHead>
+              <TableHead>Code</TableHead>
+              <TableHead className="hidden sm:table-cell">Address</TableHead>
+              <TableHead className="hidden md:table-cell">Floors</TableHead>
               <TableHead className="hidden lg:table-cell">Created</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.length === 0 ? (
+            {buildings.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={7}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  No users found.
+                  No buildings found.
                 </TableCell>
               </TableRow>
             ) : (
-              users.map((user) => (
-                <TableRow key={user._id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {user.email}
+              buildings.map((building) => (
+                <TableRow key={building._id}>
+                  <TableCell className="font-medium">{building.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{building.code}</Badge>
                   </TableCell>
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {building.address || '-'}
+                  </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {user.buildingName && user.unitNumber
-                      ? `${user.buildingName} - ${user.unitNumber}`
-                      : '-'}
+                    {building.floors}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    {formatDate(user.createdAt)}
+                    {formatDate(building.createdAt)}
                   </TableCell>
                   <TableCell>
-                    {user.isActive ? (
+                    {building.isActive ? (
                       <Badge className="bg-green-100 text-green-800">Active</Badge>
                     ) : (
                       <Badge variant="secondary">Inactive</Badge>
@@ -224,12 +209,12 @@ export function UserTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(user)}>
+                        <DropdownMenuItem onClick={() => handleEdit(building)}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDelete(user)}
+                          onClick={() => handleDelete(building)}
                           className="text-red-600"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
@@ -251,7 +236,7 @@ export function UserTable({
           <p className="text-sm text-muted-foreground">
             Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
             {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-            {pagination.total} users
+            {pagination.total} buildings
           </p>
           <div className="flex gap-2">
             <Button
@@ -274,11 +259,11 @@ export function UserTable({
         </div>
       )}
 
-      {/* User Modal */}
-      <UserModal
+      {/* Building Modal */}
+      <BuildingModal
         open={modalOpen}
         onOpenChange={setModalOpen}
-        user={selectedUser}
+        building={selectedBuilding}
         onSuccess={onRefresh}
       />
     </div>

@@ -21,6 +21,14 @@ export type Permission =
   | 'vehicles:read_own'
   | 'vehicles:update'
   | 'vehicles:delete'
+  | 'buildings:create'
+  | 'buildings:read'
+  | 'buildings:update'
+  | 'buildings:delete'
+  | 'parking_slots:create'
+  | 'parking_slots:read'
+  | 'parking_slots:update'
+  | 'parking_slots:delete'
   | 'reports:export'
   | 'reports:export_own';
 
@@ -41,6 +49,14 @@ const rolePermissions: Record<Role, Permission[]> = {
     'vehicles:read',
     'vehicles:update',
     'vehicles:delete',
+    'buildings:create',
+    'buildings:read',
+    'buildings:update',
+    'buildings:delete',
+    'parking_slots:create',
+    'parking_slots:read',
+    'parking_slots:update',
+    'parking_slots:delete',
     'reports:export',
     'reports:export_own',
   ],

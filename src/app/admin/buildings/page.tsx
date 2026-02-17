@@ -1,17 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { UserTable } from '@/components/users/UserTable';
+import { BuildingTable } from '@/components/buildings/BuildingTable';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface User {
+interface Building {
   _id: string;
   name: string;
-  email: string;
-  role: 'admin' | 'guard' | 'resident';
-  unitNumber?: string;
-  buildingName?: string;
+  code: string;
+  address?: string;
+  floors: number;
   isActive: boolean;
   createdAt: string;
 }
@@ -23,8 +22,8 @@ interface PaginationData {
   totalPages: number;
 }
 
-export default function AdminUsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
+export default function AdminBuildingsPage() {
+  const [buildings, setBuildings] = useState<Building[]>([]);
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
     limit: 10,
@@ -34,47 +33,47 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: '',
-    role: '',
+    isActive: '',
     page: 1,
   });
 
-  const fetchUsers = useCallback(async () => {
+  const fetchBuildings = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       params.set('page', filters.page.toString());
       params.set('limit', '10');
       if (filters.search) params.set('search', filters.search);
-      if (filters.role && filters.role !== 'all') {
-        params.set('role', filters.role);
+      if (filters.isActive && filters.isActive !== 'all') {
+        params.set('isActive', filters.isActive === 'active' ? 'true' : 'false');
       }
 
-      const res = await fetch(`/api/admin/users?${params}`, {
+      const res = await fetch(`/api/admin/buildings?${params}`, {
         credentials: 'include',
       });
       const data = await res.json();
 
       if (data.success) {
-        setUsers(data.data.users);
+        setBuildings(data.data.buildings);
         setPagination(data.data.pagination);
       }
     } catch (err) {
-      console.error('Failed to fetch users:', err);
+      console.error('Failed to fetch buildings:', err);
     } finally {
       setLoading(false);
     }
   }, [filters]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    fetchBuildings();
+  }, [fetchBuildings]);
 
   const handleSearch = (search: string) => {
     setFilters((prev) => ({ ...prev, search, page: 1 }));
   };
 
-  const handleRoleFilter = (role: string) => {
-    setFilters((prev) => ({ ...prev, role, page: 1 }));
+  const handleStatusFilter = (status: string) => {
+    setFilters((prev) => ({ ...prev, isActive: status, page: 1 }));
   };
 
   const handlePageChange = (page: number) => {
@@ -85,28 +84,28 @@ export default function AdminUsersPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold">User Management</h1>
+          <h1 className="text-3xl font-bold">Building Management</h1>
           <p className="text-muted-foreground">
-            Manage user accounts and role assignments
+            Manage buildings in the condominium complex
           </p>
         </div>
         <Button
           variant="outline"
           size="icon"
-          onClick={fetchUsers}
+          onClick={fetchBuildings}
           disabled={loading}
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
 
-      <UserTable
-        users={users}
+      <BuildingTable
+        buildings={buildings}
         pagination={pagination}
         onPageChange={handlePageChange}
         onSearch={handleSearch}
-        onRoleFilter={handleRoleFilter}
-        onRefresh={fetchUsers}
+        onStatusFilter={handleStatusFilter}
+        onRefresh={fetchBuildings}
       />
     </div>
   );

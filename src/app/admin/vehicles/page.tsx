@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useBuildings } from '@/hooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -57,9 +58,8 @@ interface PaginationData {
   totalPages: number;
 }
 
-const BUILDINGS = ['Tower A', 'Tower B', 'Tower C'];
-
 export default function AdminVehiclesPage() {
+  const { buildings, loading: loadingBuildings } = useBuildings();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
@@ -86,7 +86,9 @@ export default function AdminVehiclesPage() {
         params.set('buildingName', filters.buildingName);
       }
 
-      const res = await fetch(`/api/vehicles?${params}`);
+      const res = await fetch(`/api/vehicles?${params}`, {
+        credentials: 'include',
+      });
       const data = await res.json();
 
       if (data.success) {
@@ -163,15 +165,15 @@ export default function AdminVehiclesPage() {
             Search
           </Button>
         </form>
-        <Select onValueChange={handleBuildingFilter} defaultValue="all">
+        <Select onValueChange={handleBuildingFilter} defaultValue="all" disabled={loadingBuildings}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Building" />
+            <SelectValue placeholder={loadingBuildings ? 'Loading...' : 'Building'} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Buildings</SelectItem>
-            {BUILDINGS.map((building) => (
-              <SelectItem key={building} value={building}>
-                {building}
+            {buildings.map((building) => (
+              <SelectItem key={building._id} value={building.name}>
+                {building.name}
               </SelectItem>
             ))}
           </SelectContent>

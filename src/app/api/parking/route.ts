@@ -19,12 +19,12 @@ export async function GET(request: NextRequest) {
     const queryResult = parkingRecordQuerySchema.safeParse({
       page: searchParams.get('page') || '1',
       limit: searchParams.get('limit') || '10',
-      status: searchParams.get('status'),
-      buildingName: searchParams.get('buildingName'),
-      plateNumber: searchParams.get('plateNumber'),
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-      search: searchParams.get('search'),
+      status: searchParams.get('status') || undefined,
+      buildingName: searchParams.get('buildingName') || undefined,
+      plateNumber: searchParams.get('plateNumber') || undefined,
+      startDate: searchParams.get('startDate') || undefined,
+      endDate: searchParams.get('endDate') || undefined,
+      search: searchParams.get('search') || undefined,
     });
 
     if (!queryResult.success) {
@@ -79,6 +79,7 @@ export async function GET(request: NextRequest) {
         .skip(skip)
         .limit(limit)
         .populate('createdBy', 'name email')
+        .populate('updatedBy', 'name email')
         .populate('residentId', 'name email unitNumber buildingName')
         .lean(),
       ParkingRecord.countDocuments(query),

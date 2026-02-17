@@ -25,31 +25,30 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UserModal } from './UserModal';
+import { ParkingSlotModal } from './ParkingSlotModal';
 import {
   Search,
   MoreVertical,
   Pencil,
   Trash2,
-  UserPlus,
+  ParkingCircle,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface User {
+interface ParkingSlot {
   _id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'guard' | 'resident';
-  unitNumber?: string;
-  buildingName?: string;
-  isActive: boolean;
+  slotCode: string;
+  buildingName: string;
+  floor: string;
+  isOccupied: boolean;
+  currentVehicle?: string;
   createdAt: string;
 }
 
-interface UserTableProps {
-  users: User[];
+interface ParkingSlotTableProps {
+  slots: ParkingSlot[];
   pagination: {
     page: number;
     limit: number;
@@ -58,44 +57,49 @@ interface UserTableProps {
   };
   onPageChange: (page: number) => void;
   onSearch: (search: string) => void;
-  onRoleFilter: (role: string) => void;
+  onStatusFilter: (status: string) => void;
   onRefresh: () => void;
 }
 
-export function UserTable({
-  users,
+export function ParkingSlotTable({
+  slots,
   pagination,
   onPageChange,
   onSearch,
-  onRoleFilter,
+  onStatusFilter,
   onRefresh,
-}: UserTableProps) {
+}: ParkingSlotTableProps) {
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<ParkingSlot | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(search);
   };
 
-  const handleEdit = (user: User) => {
-    setSelectedUser(user);
+  const handleEdit = (slot: ParkingSlot) => {
+    setSelectedSlot(slot);
     setModalOpen(true);
   };
 
   const handleAdd = () => {
-    setSelectedUser(null);
+    setSelectedSlot(null);
     setModalOpen(true);
   };
 
-  const handleDelete = async (user: User) => {
-    if (!confirm(`Are you sure you want to deactivate ${user.name}?`)) {
+  const handleDelete = async (slot: ParkingSlot) => {
+    if (slot.isOccupied) {
+      toast.error('Cannot delete an occupied parking slot');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${slot.slotCode}?`)) {
       return;
     }
 
     try {
-      const res = await fetch(`/api/admin/users/${user._id}`, {
+      const res = await fetch(`/api/admin/parking-slots/${slot._id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -103,26 +107,13 @@ export function UserTable({
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to delete user');
+        throw new Error(data.error || 'Failed to delete parking slot');
       }
 
-      toast.success('User deactivated successfully');
+      toast.success('Parking slot deleted successfully');
       onRefresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'An error occurred');
-    }
-  };
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Badge className="bg-purple-100 text-purple-800">Admin</Badge>;
-      case 'guard':
-        return <Badge className="bg-blue-100 text-blue-800">Guard</Badge>;
-      case 'resident':
-        return <Badge className="bg-green-100 text-green-800">Resident</Badge>;
-      default:
-        return <Badge variant="secondary">{role}</Badge>;
     }
   };
 
@@ -142,7 +133,7 @@ export function UserTable({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or email..."
+              placeholder="Search by slot code..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -152,20 +143,19 @@ export function UserTable({
             Search
           </Button>
         </form>
-        <Select onValueChange={onRoleFilter} defaultValue="all">
+        <Select onValueChange={onStatusFilter} defaultValue="all">
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Role" />
+            <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="guard">Guard</SelectItem>
-            <SelectItem value="resident">Resident</SelectItem>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="available">Available</SelectItem>
+            <SelectItem value="occupied">Occupied</SelectItem>
           </SelectContent>
         </Select>
         <Button onClick={handleAdd}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add User
+          <ParkingCircle className="h-4 w-4 mr-2" />
+          Add Slot
         </Button>
       </div>
 
@@ -174,46 +164,40 @@ export function UserTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead className="hidden sm:table-cell">Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead className="hidden md:table-cell">Building/Unit</TableHead>
+              <TableHead>Slot Code</TableHead>
+              <TableHead>Floor</TableHead>
+              <TableHead className="hidden sm:table-cell">Current Vehicle</TableHead>
               <TableHead className="hidden lg:table-cell">Created</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.length === 0 ? (
+            {slots.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={7}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  No users found.
+                  No parking slots found.
                 </TableCell>
               </TableRow>
             ) : (
-              users.map((user) => (
-                <TableRow key={user._id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
+              slots.map((slot) => (
+                <TableRow key={slot._id}>
+                  <TableCell className="font-medium">{slot.slotCode}</TableCell>
+                  <TableCell>{slot.floor}</TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    {user.email}
-                  </TableCell>
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {user.buildingName && user.unitNumber
-                      ? `${user.buildingName} - ${user.unitNumber}`
-                      : '-'}
+                    {slot.currentVehicle || '-'}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    {formatDate(user.createdAt)}
+                    {formatDate(slot.createdAt)}
                   </TableCell>
                   <TableCell>
-                    {user.isActive ? (
-                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                    {slot.isOccupied ? (
+                      <Badge className="bg-red-100 text-red-800">Occupied</Badge>
                     ) : (
-                      <Badge variant="secondary">Inactive</Badge>
+                      <Badge className="bg-green-100 text-green-800">Available</Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -224,16 +208,17 @@ export function UserTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(user)}>
+                        <DropdownMenuItem onClick={() => handleEdit(slot)}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDelete(user)}
+                          onClick={() => handleDelete(slot)}
                           className="text-red-600"
+                          disabled={slot.isOccupied}
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Deactivate
+                          Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -251,7 +236,7 @@ export function UserTable({
           <p className="text-sm text-muted-foreground">
             Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
             {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-            {pagination.total} users
+            {pagination.total} slots
           </p>
           <div className="flex gap-2">
             <Button
@@ -274,11 +259,11 @@ export function UserTable({
         </div>
       )}
 
-      {/* User Modal */}
-      <UserModal
+      {/* Parking Slot Modal */}
+      <ParkingSlotModal
         open={modalOpen}
         onOpenChange={setModalOpen}
-        user={selectedUser}
+        slot={selectedSlot}
         onSuccess={onRefresh}
       />
     </div>

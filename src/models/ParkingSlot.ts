@@ -23,7 +23,6 @@ const ParkingSlotSchema = new Schema<IParkingSlot>(
     },
     buildingName: {
       type: String,
-      required: [true, 'Building name is required'],
       trim: true,
     },
     floor: {

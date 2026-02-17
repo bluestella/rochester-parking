@@ -35,6 +35,9 @@ interface ParkingRecord {
   createdBy?: {
     name: string;
   };
+  updatedBy?: {
+    name: string;
+  };
 }
 
 interface ParkingTableProps {
@@ -132,6 +135,8 @@ export function ParkingTable({
               <TableHead className="hidden lg:table-cell">Slot</TableHead>
               <TableHead>Entry Time</TableHead>
               <TableHead className="hidden md:table-cell">Duration</TableHead>
+              <TableHead className="hidden lg:table-cell">Created By</TableHead>
+              <TableHead className="hidden lg:table-cell">Exited By</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -164,6 +169,12 @@ export function ParkingTable({
                   <TableCell>{formatDate(record.entryTimestamp)}</TableCell>
                   <TableCell className="hidden md:table-cell">
                     {record.duration ? formatDuration(record.duration) : '-'}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {record.createdBy?.name || '-'}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {record.updatedBy?.name || '-'}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={record.status} />

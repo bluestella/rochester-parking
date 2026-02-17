@@ -12,3 +12,6 @@ export type { IParkingRecord, ParkingStatus } from './ParkingRecord';
 
 export { default as AuditLog } from './AuditLog';
 export type { IAuditLog } from './AuditLog';
+
+export { default as Building } from './Building';
+export type { IBuilding } from './Building';

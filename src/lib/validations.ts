@@ -79,8 +79,30 @@ export const exitParkingRecordSchema = z.object({
 // Parking slot schemas
 export const createParkingSlotSchema = z.object({
   slotCode: z.string().min(1, 'Slot code is required').transform((val) => val.toUpperCase().trim()),
-  buildingName: z.string().min(1, 'Building name is required'),
+  buildingName: z.string().optional(),
   floor: z.string().min(1, 'Floor is required'),
+});
+
+export const updateParkingSlotSchema = z.object({
+  slotCode: z.string().min(1).transform((val) => val.toUpperCase().trim()).optional(),
+  buildingName: z.string().min(1).optional(),
+  floor: z.string().min(1).optional(),
+});
+
+// Building schemas
+export const createBuildingSchema = z.object({
+  name: z.string().min(2, 'Building name must be at least 2 characters'),
+  code: z.string().min(1, 'Building code is required').max(5, 'Building code must be at most 5 characters').transform((val) => val.toUpperCase().trim()),
+  address: z.string().optional(),
+  floors: z.coerce.number().int().positive().default(1),
+});
+
+export const updateBuildingSchema = z.object({
+  name: z.string().min(2).optional(),
+  code: z.string().min(1).max(5).transform((val) => val.toUpperCase().trim()).optional(),
+  address: z.string().optional(),
+  floors: z.coerce.number().int().positive().optional(),
+  isActive: z.boolean().optional(),
 });
 
 // Query schemas
@@ -108,5 +130,8 @@ export type CreateParkingRecordInput = z.infer<typeof createParkingRecordSchema>
 export type UpdateParkingRecordInput = z.infer<typeof updateParkingRecordSchema>;
 export type ExitParkingRecordInput = z.infer<typeof exitParkingRecordSchema>;
 export type CreateParkingSlotInput = z.infer<typeof createParkingSlotSchema>;
+export type UpdateParkingSlotInput = z.infer<typeof updateParkingSlotSchema>;
+export type CreateBuildingInput = z.infer<typeof createBuildingSchema>;
+export type UpdateBuildingInput = z.infer<typeof updateBuildingSchema>;
 export type PaginationInput = z.infer<typeof paginationSchema>;
 export type ParkingRecordQueryInput = z.infer<typeof parkingRecordQuerySchema>;

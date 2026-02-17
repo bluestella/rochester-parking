@@ -22,6 +22,9 @@ import {
   X,
   LogOut,
   User,
+  CarFront,
+  Building2,
+  ParkingCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -51,6 +54,24 @@ export function Navbar() {
       label: 'Users',
       href: '/admin/users',
       icon: Users,
+      roles: ['admin'],
+    },
+    {
+      label: 'Vehicles',
+      href: '/admin/vehicles',
+      icon: CarFront,
+      roles: ['admin'],
+    },
+    {
+      label: 'Buildings',
+      href: '/admin/buildings',
+      icon: Building2,
+      roles: ['admin'],
+    },
+    {
+      label: 'Parking Slots',
+      href: '/admin/parking-slots',
+      icon: ParkingCircle,
       roles: ['admin'],
     },
     {

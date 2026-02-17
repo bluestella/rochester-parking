@@ -76,7 +76,9 @@ export default function ResidentHistoryPage() {
         params.set('status', filters.status);
       }
 
-      const res = await fetch(`/api/resident/history?${params}`);
+      const res = await fetch(`/api/resident/history?${params}`, {
+        credentials: 'include',
+      });
       const data = await res.json();
 
       if (data.success) {
@@ -117,7 +119,9 @@ export default function ResidentHistoryPage() {
         params.set('status', filters.status);
       }
 
-      const res = await fetch(`/api/resident/history?${params}`);
+      const res = await fetch(`/api/resident/history?${params}`, {
+        credentials: 'include',
+      });
 
       if (!res.ok) {
         throw new Error('Failed to export');

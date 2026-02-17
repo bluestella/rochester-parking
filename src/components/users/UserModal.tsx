@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useBuildings } from '@/hooks';
 import {
   Dialog,
   DialogContent,
@@ -39,14 +40,13 @@ interface UserModalProps {
   onSuccess: () => void;
 }
 
-const BUILDINGS = ['Tower A', 'Tower B', 'Tower C'];
-
 export function UserModal({
   open,
   onOpenChange,
   user,
   onSuccess,
 }: UserModalProps) {
+  const { buildings, loading: loadingBuildings } = useBuildings();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -97,6 +97,7 @@ export function UserModal({
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(body),
       });
 
@@ -203,14 +204,15 @@ export function UserModal({
                     onValueChange={(value) =>
                       setFormData({ ...formData, buildingName: value })
                     }
+                    disabled={loadingBuildings}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select building" />
+                      <SelectValue placeholder={loadingBuildings ? 'Loading...' : 'Select building'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {BUILDINGS.map((building) => (
-                        <SelectItem key={building} value={building}>
-                          {building}
+                      {buildings.map((building) => (
+                        <SelectItem key={building._id} value={building.name}>
+                          {building.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

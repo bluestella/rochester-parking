@@ -58,6 +58,7 @@ export function ExitModal({
       const res = await fetch(`/api/parking/${record._id}/exit`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({}),
       });
 

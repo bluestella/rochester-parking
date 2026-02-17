@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useBuildings } from '@/hooks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,10 +49,9 @@ interface Vehicle {
   color?: string;
 }
 
-const BUILDINGS = ['Tower A', 'Tower B', 'Tower C'];
-
 export default function ResidentPage() {
   const { data: session } = useSession();
+  const { buildings, loading: loadingBuildings } = useBuildings();
   const [stats, setStats] = useState<Stats | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,8 +74,8 @@ export default function ResidentPage() {
     setLoading(true);
     try {
       const [historyRes, vehiclesRes] = await Promise.all([
-        fetch('/api/resident/history?limit=1'),
-        fetch('/api/resident/vehicles'),
+        fetch('/api/resident/history?limit=1', { credentials: 'include' }),
+        fetch('/api/resident/vehicles', { credentials: 'include' }),
       ]);
 
       const historyData = await historyRes.json();
@@ -102,6 +102,7 @@ export default function ResidentPage() {
       const res = await fetch('/api/resident/vehicles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(vehicleForm),
       });
 
@@ -308,14 +309,15 @@ export default function ResidentPage() {
                         setVehicleForm({ ...vehicleForm, buildingName: value })
                       }
                       required
+                      disabled={loadingBuildings}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select" />
+                        <SelectValue placeholder={loadingBuildings ? 'Loading...' : 'Select'} />
                       </SelectTrigger>
                       <SelectContent>
-                        {BUILDINGS.map((b) => (
-                          <SelectItem key={b} value={b}>
-                            {b}
+                        {buildings.map((b) => (
+                          <SelectItem key={b._id} value={b.name}>
+                            {b.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

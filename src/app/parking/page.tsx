@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { ParkingTable } from '@/components/parking/ParkingTable';
+import { ExportReportButton } from '@/components/parking/ExportReportButton';
 import { Plus, RefreshCw } from 'lucide-react';
 
 interface ParkingRecord {
@@ -19,6 +21,9 @@ interface ParkingRecord {
   createdBy?: {
     name: string;
   };
+  updatedBy?: {
+    name: string;
+  };
 }
 
 interface PaginationData {
@@ -29,6 +34,7 @@ interface PaginationData {
 }
 
 export default function ParkingPage() {
+  const { data: session } = useSession();
   const [records, setRecords] = useState<ParkingRecord[]>([]);
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
@@ -54,7 +60,9 @@ export default function ParkingPage() {
         params.set('status', filters.status);
       }
 
-      const res = await fetch(`/api/parking?${params}`);
+      const res = await fetch(`/api/parking?${params}`, {
+        credentials: 'include',
+      });
       const data = await res.json();
 
       if (data.success) {
@@ -102,6 +110,7 @@ export default function ParkingPage() {
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
+          {session?.user?.role === 'admin' && <ExportReportButton />}
           <Button asChild>
             <Link href="/parking/new">
               <Plus className="h-4 w-4 mr-2" />

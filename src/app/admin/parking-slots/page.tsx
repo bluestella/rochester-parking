@@ -1,18 +1,17 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { UserTable } from '@/components/users/UserTable';
+import { ParkingSlotTable } from '@/components/parking-slots/ParkingSlotTable';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface User {
+interface ParkingSlot {
   _id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'guard' | 'resident';
-  unitNumber?: string;
-  buildingName?: string;
-  isActive: boolean;
+  slotCode: string;
+  buildingName: string;
+  floor: string;
+  isOccupied: boolean;
+  currentVehicle?: string;
   createdAt: string;
 }
 
@@ -23,8 +22,8 @@ interface PaginationData {
   totalPages: number;
 }
 
-export default function AdminUsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
+export default function AdminParkingSlotsPage() {
+  const [slots, setSlots] = useState<ParkingSlot[]>([]);
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
     limit: 10,
@@ -34,47 +33,55 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: '',
-    role: '',
+    buildingName: '',
+    isOccupied: '',
     page: 1,
   });
 
-  const fetchUsers = useCallback(async () => {
+  const fetchSlots = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       params.set('page', filters.page.toString());
       params.set('limit', '10');
       if (filters.search) params.set('search', filters.search);
-      if (filters.role && filters.role !== 'all') {
-        params.set('role', filters.role);
+      if (filters.buildingName && filters.buildingName !== 'all') {
+        params.set('buildingName', filters.buildingName);
+      }
+      if (filters.isOccupied && filters.isOccupied !== 'all') {
+        params.set('isOccupied', filters.isOccupied === 'occupied' ? 'true' : 'false');
       }
 
-      const res = await fetch(`/api/admin/users?${params}`, {
+      const res = await fetch(`/api/admin/parking-slots?${params}`, {
         credentials: 'include',
       });
       const data = await res.json();
 
       if (data.success) {
-        setUsers(data.data.users);
+        setSlots(data.data.slots);
         setPagination(data.data.pagination);
       }
     } catch (err) {
-      console.error('Failed to fetch users:', err);
+      console.error('Failed to fetch parking slots:', err);
     } finally {
       setLoading(false);
     }
   }, [filters]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    fetchSlots();
+  }, [fetchSlots]);
 
   const handleSearch = (search: string) => {
     setFilters((prev) => ({ ...prev, search, page: 1 }));
   };
 
-  const handleRoleFilter = (role: string) => {
-    setFilters((prev) => ({ ...prev, role, page: 1 }));
+  const handleBuildingFilter = (buildingName: string) => {
+    setFilters((prev) => ({ ...prev, buildingName, page: 1 }));
+  };
+
+  const handleStatusFilter = (status: string) => {
+    setFilters((prev) => ({ ...prev, isOccupied: status, page: 1 }));
   };
 
   const handlePageChange = (page: number) => {
@@ -85,28 +92,29 @@ export default function AdminUsersPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold">User Management</h1>
+          <h1 className="text-3xl font-bold">Parking Slot Management</h1>
           <p className="text-muted-foreground">
-            Manage user accounts and role assignments
+            Manage parking slots across all buildings
           </p>
         </div>
         <Button
           variant="outline"
           size="icon"
-          onClick={fetchUsers}
+          onClick={fetchSlots}
           disabled={loading}
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
 
-      <UserTable
-        users={users}
+      <ParkingSlotTable
+        slots={slots}
         pagination={pagination}
         onPageChange={handlePageChange}
         onSearch={handleSearch}
-        onRoleFilter={handleRoleFilter}
-        onRefresh={fetchUsers}
+        onBuildingFilter={handleBuildingFilter}
+        onStatusFilter={handleStatusFilter}
+        onRefresh={fetchSlots}
       />
     </div>
   );

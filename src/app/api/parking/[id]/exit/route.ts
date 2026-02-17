@@ -70,7 +70,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         updatedBy: session!.user.id,
       },
       { new: true }
-    );
+    ).populate('updatedBy', 'name');
 
     // Free up parking slot
     await ParkingSlot.findOneAndUpdate(

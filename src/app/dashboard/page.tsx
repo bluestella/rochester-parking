@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Car, Users, ClipboardList, History } from 'lucide-react';
+import { Car, Users, ClipboardList, History, CarFront } from 'lucide-react';
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -74,6 +74,21 @@ export default async function DashboardPage() {
             </CardDescription>
             <Button asChild variant="secondary" className="w-full">
               <Link href="/admin/users">Manage Users</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Vehicles</CardTitle>
+            <CarFront className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="mb-4">
+              View all registered resident vehicles
+            </CardDescription>
+            <Button asChild variant="secondary" className="w-full">
+              <Link href="/admin/vehicles">View Vehicles</Link>
             </Button>
           </CardContent>
         </Card>
