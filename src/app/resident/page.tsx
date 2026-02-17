@@ -3,18 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { useBuildings } from '@/hooks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
@@ -42,8 +34,6 @@ interface Stats {
 interface Vehicle {
   _id: string;
   plateNumber: string;
-  buildingName: string;
-  unitNumber: string;
   make?: string;
   model?: string;
   color?: string;
@@ -51,7 +41,6 @@ interface Vehicle {
 
 export default function ResidentPage() {
   const { data: session } = useSession();
-  const { buildings, loading: loadingBuildings } = useBuildings();
   const [stats, setStats] = useState<Stats | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,10 +48,8 @@ export default function ResidentPage() {
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [vehicleForm, setVehicleForm] = useState({
     plateNumber: '',
-    buildingName: '',
-    unitNumber: '',
     make: '',
-    model: '',
+    vehicleModel: '',
     color: '',
   });
 
@@ -119,10 +106,8 @@ export default function ResidentPage() {
       toast.success('Vehicle registered successfully');
       setVehicleForm({
         plateNumber: '',
-        buildingName: '',
-        unitNumber: '',
         make: '',
-        model: '',
+        vehicleModel: '',
         color: '',
       });
       setShowVehicleForm(false);
@@ -302,37 +287,25 @@ export default function ResidentPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="building">Building *</Label>
-                    <Select
-                      value={vehicleForm.buildingName}
-                      onValueChange={(value) =>
-                        setVehicleForm({ ...vehicleForm, buildingName: value })
+                    <Label htmlFor="make">Make</Label>
+                    <Input
+                      id="make"
+                      value={vehicleForm.make}
+                      onChange={(e) =>
+                        setVehicleForm({ ...vehicleForm, make: e.target.value })
                       }
-                      required
-                      disabled={loadingBuildings}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={loadingBuildings ? 'Loading...' : 'Select'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {buildings.map((b) => (
-                          <SelectItem key={b._id} value={b.name}>
-                            {b.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="e.g., Toyota"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="unit">Unit Number *</Label>
+                    <Label htmlFor="model">Model</Label>
                     <Input
-                      id="unit"
-                      value={vehicleForm.unitNumber}
+                      id="model"
+                      value={vehicleForm.vehicleModel}
                       onChange={(e) =>
-                        setVehicleForm({ ...vehicleForm, unitNumber: e.target.value })
+                        setVehicleForm({ ...vehicleForm, vehicleModel: e.target.value })
                       }
-                      placeholder="12A"
-                      required
+                      placeholder="e.g., Vios"
                     />
                   </div>
                   <div className="space-y-2">
@@ -343,7 +316,7 @@ export default function ResidentPage() {
                       onChange={(e) =>
                         setVehicleForm({ ...vehicleForm, color: e.target.value })
                       }
-                      placeholder="Black"
+                      placeholder="e.g., Black"
                     />
                   </div>
                 </div>
@@ -375,7 +348,7 @@ export default function ResidentPage() {
                     <div>
                       <p className="font-medium">{vehicle.plateNumber}</p>
                       <p className="text-sm text-muted-foreground">
-                        {vehicle.buildingName} - {vehicle.unitNumber}
+                        {vehicle.make} {vehicle.model}
                       </p>
                     </div>
                     {vehicle.color && (

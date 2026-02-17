@@ -4,8 +4,8 @@ export interface IVehicle extends Document {
   _id: mongoose.Types.ObjectId;
   plateNumber: string;
   ownerId?: mongoose.Types.ObjectId;
-  buildingName: string;
-  unitNumber: string;
+  buildingName?: string;
+  unitNumber?: string;
   make?: string;
   vehicleModel?: string;
   color?: string;
@@ -31,12 +31,10 @@ const VehicleSchema = new Schema<IVehicle>(
     },
     buildingName: {
       type: String,
-      required: [true, 'Building name is required'],
       trim: true,
     },
     unitNumber: {
       type: String,
-      required: [true, 'Unit number is required'],
       trim: true,
     },
     make: {

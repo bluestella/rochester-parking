@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { Vehicle, User, AuditLog } from '@/models';
+import { Vehicle, AuditLog } from '@/models';
 import { requirePermission } from '@/lib/rbac';
 import { createVehicleSchema } from '@/lib/validations';
 
@@ -49,26 +49,6 @@ export async function POST(request: NextRequest) {
 
     const data = validationResult.data;
 
-    // Get user's building and unit info
-    const user = await User.findById(session!.user.id);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Use user's building/unit if not provided
-    const buildingName = data.buildingName || user.buildingName;
-    const unitNumber = data.unitNumber || user.unitNumber;
-
-    if (!buildingName || !unitNumber) {
-      return NextResponse.json(
-        { success: false, error: 'Building name and unit number are required' },
-        { status: 400 }
-      );
-    }
-
     // Check if plate number already exists
     const existingVehicle = await Vehicle.findOne({
       plateNumber: data.plateNumber,
@@ -83,8 +63,6 @@ export async function POST(request: NextRequest) {
     // Create vehicle
     const vehicle = await Vehicle.create({
       ...data,
-      buildingName,
-      unitNumber,
       ownerId: session!.user.id,
       createdBy: session!.user.id,
     });

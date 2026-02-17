@@ -35,8 +35,6 @@ export const plateNumberSchema = z
 export const createVehicleSchema = z.object({
   plateNumber: plateNumberSchema,
   ownerId: z.string().optional(),
-  buildingName: z.string().min(1, 'Building name is required'),
-  unitNumber: z.string().min(1, 'Unit number is required'),
   make: z.string().optional(),
   vehicleModel: z.string().optional(),
   color: z.string().optional(),
@@ -45,8 +43,6 @@ export const createVehicleSchema = z.object({
 export const updateVehicleSchema = z.object({
   plateNumber: plateNumberSchema.optional(),
   ownerId: z.string().optional(),
-  buildingName: z.string().min(1).optional(),
-  unitNumber: z.string().min(1).optional(),
   make: z.string().optional(),
   vehicleModel: z.string().optional(),
   color: z.string().optional(),

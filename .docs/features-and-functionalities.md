@@ -48,11 +48,11 @@ Empowering residents with transparency regarding their vehicle history.
 
 ## 4. Security & Access Control
 
-Enterprise-grade security features to protect data and operations.
+Security features to protect data and operations.
 
--   **Role-Based Access Control (RBAC):** Strict permission enforcement via Permit.io.
+-   **Role-Based Access Control (RBAC):** Custom permission matrix (Admin, Guard, Resident) enforced via middleware and server-side helpers.
     -   *Example:* Residents cannot see other residents' logs; Guards cannot delete users.
--   **Secure Authentication:** Encrypted login sessions using JWT.
+-   **Authentication:** NextAuth.js with credentials provider and JWT sessions.
 -   **Audit Logging:** Detailed logs of critical actions (Record Creation, Updates, Deletions) including User ID, Timestamp, and IP Address.
 
 ## 5. Reporting & Analytics

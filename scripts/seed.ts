@@ -32,8 +32,24 @@ const ParkingSlotSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const VehicleSchema = new mongoose.Schema(
+  {
+    plateNumber: { type: String, required: true, unique: true },
+    ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    buildingName: { type: String },
+    unitNumber: { type: String },
+    make: { type: String },
+    vehicleModel: { type: String },
+    color: { type: String },
+    isActive: { type: Boolean, default: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  },
+  { timestamps: true }
+);
+
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 const ParkingSlot = mongoose.models.ParkingSlot || mongoose.model('ParkingSlot', ParkingSlotSchema);
+const Vehicle = mongoose.models.Vehicle || mongoose.model('Vehicle', VehicleSchema);
 
 async function seed() {
   const MONGODB_URI = process.env.MONGODB_URI;
@@ -50,6 +66,7 @@ async function seed() {
     // Clear existing data
     await User.deleteMany({});
     await ParkingSlot.deleteMany({});
+    await Vehicle.deleteMany({});
     console.log('Cleared existing data');
 
     // Create users
@@ -74,7 +91,7 @@ async function seed() {
       createdBy: admin._id,
     });
 
-    await User.create({
+    const resident1 = await User.create({
       name: 'John Resident',
       email: 'resident@parktrack.com',
       passwordHash: residentPassword,
@@ -86,7 +103,7 @@ async function seed() {
     });
 
     // Create more residents
-    await User.create({
+    const resident2 = await User.create({
       name: 'Jane Smith',
       email: 'jane@example.com',
       passwordHash: residentPassword,
@@ -98,6 +115,29 @@ async function seed() {
     });
 
     console.log('Created users');
+
+    // Create vehicles
+    await Vehicle.create({
+      plateNumber: 'ABC 1234',
+      ownerId: resident1._id,
+      make: 'Toyota',
+      vehicleModel: 'Camry',
+      color: 'Silver',
+      isActive: true,
+      createdBy: resident1._id,
+    });
+
+    await Vehicle.create({
+      plateNumber: 'XYZ 9876',
+      ownerId: resident2._id,
+      make: 'Honda',
+      vehicleModel: 'Civic',
+      color: 'Black',
+      isActive: true,
+      createdBy: resident2._id,
+    });
+
+    console.log('Created vehicles');
 
     // Create parking slots
     const buildings = ['Tower A', 'Tower B', 'Tower C'];

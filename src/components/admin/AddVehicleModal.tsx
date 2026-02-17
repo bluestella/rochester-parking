@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useBuildings } from '@/hooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,13 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2, X, User } from 'lucide-react';
 import { UserSearch } from '@/components/admin/UserSearch';
@@ -43,14 +35,11 @@ export function AddVehicleModal({
   onOpenChange,
   onSuccess,
 }: AddVehicleModalProps) {
-  const { buildings, loading: loadingBuildings } = useBuildings();
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Resident | null>(null);
 
   const [formData, setFormData] = useState({
     plateNumber: '',
-    buildingName: '',
-    unitNumber: '',
     make: '',
     vehicleModel: '',
     color: '',
@@ -96,8 +85,6 @@ export function AddVehicleModal({
   const resetForm = () => {
     setFormData({
       plateNumber: '',
-      buildingName: '',
-      unitNumber: '',
       make: '',
       vehicleModel: '',
       color: '',
@@ -107,11 +94,6 @@ export function AddVehicleModal({
 
   const handleUserSelect = (user: Resident) => {
     setSelectedUser(user);
-    setFormData(prev => ({
-      ...prev,
-      buildingName: user.buildingName || '',
-      unitNumber: user.unitNumber || '',
-    }));
   };
 
   return (
@@ -149,6 +131,11 @@ export function AddVehicleModal({
                 <div className="mt-2">
                   <p className="font-medium">{selectedUser.name}</p>
                   <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                  {selectedUser.buildingName && selectedUser.unitNumber && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {selectedUser.buildingName} - {selectedUser.unitNumber}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -165,44 +152,6 @@ export function AddVehicleModal({
                 className="uppercase"
                 required
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="buildingName">Building *</Label>
-                <Select
-                  value={formData.buildingName}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, buildingName: value })
-                  }
-                  disabled={loadingBuildings}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={loadingBuildings ? 'Loading...' : 'Select'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {buildings.map((building) => (
-                      <SelectItem key={building._id} value={building.name}>
-                        {building.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="unitNumber">Unit Number *</Label>
-                <Input
-                  id="unitNumber"
-                  value={formData.unitNumber}
-                  onChange={(e) =>
-                    setFormData({ ...formData, unitNumber: e.target.value })
-                  }
-                  placeholder="e.g., 12A"
-                  required
-                />
-              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
