@@ -103,6 +103,25 @@ export const updateBuildingSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+// Equipment schemas
+export const createEquipmentSchema = z.object({
+  equipmentId: z.string().min(1, 'Equipment ID is required'),
+  make: z.string().min(1, 'Make is required'),
+  equipmentModel: z.string().min(1, 'Model is required'),
+  preventativeMaintenanceSchedule: z.string().datetime().optional(),
+  partsInventory: z.string().optional(),
+  operatorDetails: z.string().optional(),
+});
+
+export const updateEquipmentSchema = z.object({
+  equipmentId: z.string().min(1).optional(),
+  make: z.string().min(1).optional(),
+  equipmentModel: z.string().min(1).optional(),
+  preventativeMaintenanceSchedule: z.string().datetime().optional(),
+  partsInventory: z.string().optional(),
+  operatorDetails: z.string().optional(),
+});
+
 // Query schemas
 export const paginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -131,5 +150,7 @@ export type CreateParkingSlotInput = z.infer<typeof createParkingSlotSchema>;
 export type UpdateParkingSlotInput = z.infer<typeof updateParkingSlotSchema>;
 export type CreateBuildingInput = z.infer<typeof createBuildingSchema>;
 export type UpdateBuildingInput = z.infer<typeof updateBuildingSchema>;
+export type CreateEquipmentInput = z.infer<typeof createEquipmentSchema>;
+export type UpdateEquipmentInput = z.infer<typeof updateEquipmentSchema>;
 export type PaginationInput = z.infer<typeof paginationSchema>;
 export type ParkingRecordQueryInput = z.infer<typeof parkingRecordQuerySchema>;

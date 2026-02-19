@@ -25,6 +25,7 @@ import {
   CarFront,
   Building2,
   ParkingCircle,
+  Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -72,6 +73,12 @@ export function Navbar() {
       label: 'Parking Slots',
       href: '/admin/parking-slots',
       icon: ParkingCircle,
+      roles: ['admin'],
+    },
+    {
+      label: 'Equipments',
+      href: '/admin/equipments',
+      icon: Wrench,
       roles: ['admin'],
     },
     {

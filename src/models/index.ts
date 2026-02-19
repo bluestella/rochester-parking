@@ -15,3 +15,6 @@ export type { IAuditLog } from './AuditLog';
 
 export { default as Building } from './Building';
 export type { IBuilding } from './Building';
+
+export { default as Equipment } from './Equipment';
+export type { IEquipment } from './Equipment';
