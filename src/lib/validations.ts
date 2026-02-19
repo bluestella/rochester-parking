@@ -56,6 +56,7 @@ export const createParkingRecordSchema = z.object({
   unitNumber: z.string().min(1, 'Unit number is required'),
   parkingSlot: z.string().min(1, 'Parking slot is required'),
   entryTimestamp: z.string().datetime().optional(),
+  etd: z.string().datetime().optional(),
   vehicleId: z.string().optional(),
   residentId: z.string().optional(),
 });
@@ -66,6 +67,7 @@ export const updateParkingRecordSchema = z.object({
   unitNumber: z.string().min(1).optional(),
   parkingSlot: z.string().min(1).optional(),
   entryTimestamp: z.string().datetime().optional(),
+  etd: z.string().datetime().optional(),
 });
 
 export const exitParkingRecordSchema = z.object({

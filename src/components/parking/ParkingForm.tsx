@@ -46,6 +46,7 @@ export function ParkingForm() {
     buildingName: '',
     unitNumber: '',
     parkingSlot: '',
+    etd: '',
   });
 
   useEffect(() => {
@@ -94,6 +95,7 @@ export function ParkingForm() {
       buildingName: '',
       unitNumber: '',
       parkingSlot: '',
+      etd: '',
     });
     setSelectedResident(null);
   };
@@ -110,6 +112,7 @@ export function ParkingForm() {
     try {
       const payload = {
         ...formData,
+        etd: formData.etd ? new Date(formData.etd).toISOString() : undefined,
         vehicleId: selectedResident?.vehicleId,
         residentId: selectedResident?.residentId,
       };
@@ -266,38 +269,53 @@ export function ParkingForm() {
 
           {/* Parking Slot (always shown when vehicle info is available) */}
           {(hasSelectedVehicle || !isResidentMode) && (
-            <div className="space-y-2">
-              <Label htmlFor="parkingSlot">Parking Slot *</Label>
-              <Select
-                value={formData.parkingSlot}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, parkingSlot: value })
-                }
-                required
-                disabled={loadingSlots}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      loadingSlots ? 'Loading slots...' : 'Select parking slot'
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSlots.length === 0 ? (
-                    <SelectItem value="_none" disabled>
-                      No available slots
-                    </SelectItem>
-                  ) : (
-                    availableSlots.map((slot) => (
-                      <SelectItem key={slot._id} value={slot.slotCode}>
-                        {slot.slotCode} ({slot.floor})
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="parkingSlot">Parking Slot *</Label>
+                <Select
+                  value={formData.parkingSlot}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, parkingSlot: value })
+                  }
+                  required
+                  disabled={loadingSlots}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        loadingSlots ? 'Loading slots...' : 'Select parking slot'
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSlots.length === 0 ? (
+                      <SelectItem value="_none" disabled>
+                        No available slots
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+                    ) : (
+                      availableSlots.map((slot) => (
+                        <SelectItem key={slot._id} value={slot.slotCode}>
+                          {slot.slotCode} ({slot.floor})
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="etd">Expected Time of Departure (ETD)</Label>
+                <Input
+                  id="etd"
+                  type="datetime-local"
+                  value={formData.etd}
+                  onChange={(e) =>
+                    setFormData({ ...formData, etd: e.target.value })
+                  }
+                  min={new Date().toISOString().slice(0, 16)}
+                />
+              </div>
+            </>
           )}
 
           {/* Action Buttons */}

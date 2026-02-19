@@ -30,6 +30,7 @@ interface ParkingRecord {
   parkingSlot: string;
   status: 'parked' | 'exited';
   entryTimestamp: string;
+  etd?: string;
   exitTimestamp?: string;
   duration?: number;
   createdBy?: {
@@ -134,6 +135,7 @@ export function ParkingTable({
               <TableHead className="hidden sm:table-cell">Unit</TableHead>
               <TableHead className="hidden lg:table-cell">Slot</TableHead>
               <TableHead>Entry Time</TableHead>
+              <TableHead className="hidden md:table-cell">ETD</TableHead>
               <TableHead className="hidden md:table-cell">Duration</TableHead>
               <TableHead className="hidden lg:table-cell">Created By</TableHead>
               <TableHead className="hidden lg:table-cell">Exited By</TableHead>
@@ -167,6 +169,9 @@ export function ParkingTable({
                     {record.parkingSlot}
                   </TableCell>
                   <TableCell>{formatDate(record.entryTimestamp)}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {record.etd ? formatDate(record.etd) : '-'}
+                  </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {record.duration ? formatDuration(record.duration) : '-'}
                   </TableCell>

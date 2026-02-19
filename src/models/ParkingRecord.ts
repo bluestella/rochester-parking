@@ -16,6 +16,7 @@ export interface IParkingRecord extends Document {
   residentId?: mongoose.Types.ObjectId;
   createdBy: mongoose.Types.ObjectId;
   updatedBy?: mongoose.Types.ObjectId;
+  etd?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -78,6 +79,9 @@ const ParkingRecordSchema = new Schema<IParkingRecord>(
     updatedBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
+    },
+    etd: {
+      type: Date,
     },
   },
   {
