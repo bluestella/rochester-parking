@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
+import { like } from '@/lib/api';
 import { Vehicle, User, AuditLog } from '@/models';
 import { requirePermission } from '@/lib/rbac';
 import { createVehicleSchema, paginationSchema } from '@/lib/validations';
@@ -47,17 +48,17 @@ export async function GET(request: NextRequest) {
       // Find users matching the search term
       const matchingUsers = await User.find({
         $or: [
-          { name: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } },
-          { buildingName: { $regex: search, $options: 'i' } },
-          { unitNumber: { $regex: search, $options: 'i' } },
+          { name: like(search) },
+          { email: like(search) },
+          { buildingName: like(search) },
+          { unitNumber: like(search) },
         ],
       }).select('_id');
 
       const userIds = matchingUsers.map((u) => u._id);
 
       query.$or = [
-        { plateNumber: { $regex: search, $options: 'i' } },
+        { plateNumber: like(search) },
         { ownerId: { $in: userIds } },
       ];
     }

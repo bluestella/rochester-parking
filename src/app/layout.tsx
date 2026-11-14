@@ -1,22 +1,26 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Barlow, Barlow_Condensed } from 'next/font/google';
 import { Providers } from '@/components/providers';
-import { Navbar } from '@/components/layout/Navbar';
+import { AppShell } from '@/components/layout/AppShell';
+import { brand } from '@/lib/brand';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+// Barlow is drawn from highway signs and licence plates: the vernacular of a parking deck.
+const barlow = Barlow({
+  variable: '--font-barlow',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const barlowCondensed = Barlow_Condensed({
+  variable: '--font-barlow-condensed',
   subsets: ['latin'],
+  weight: ['600', '700'],
 });
 
 export const metadata: Metadata = {
-  title: 'Condo ParkTrack',
-  description: 'Condominium Parking Management System',
+  title: { default: brand.name, template: `%s · ${brand.name}` },
+  description: `${brand.descriptor}: parking, dues, facilities and community.`,
 };
 
 export default function RootLayout({
@@ -25,13 +29,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${barlow.variable} ${barlowCondensed.variable} antialiased`}>
         <Providers>
-          <Navbar />
-          <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>

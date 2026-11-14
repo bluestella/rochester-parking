@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
+import { like } from '@/lib/api';
 import { ParkingRecord, Vehicle } from '@/models';
 import { requirePermission } from '@/lib/rbac';
 import { paginationSchema } from '@/lib/validations';
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (plateNumber) {
-      query.plateNumber = { $regex: plateNumber, $options: 'i' };
+      query.plateNumber = like(plateNumber);
     }
 
     if (startDate || endDate) {

@@ -118,9 +118,9 @@ export function UserTable({
       case 'admin':
         return <Badge className="bg-purple-100 text-purple-800">Admin</Badge>;
       case 'guard':
-        return <Badge className="bg-blue-100 text-blue-800">Guard</Badge>;
+        return <Badge variant="info">Guard</Badge>;
       case 'resident':
-        return <Badge className="bg-green-100 text-green-800">Resident</Badge>;
+        return <Badge variant="success">Resident</Badge>;
       default:
         return <Badge variant="secondary">{role}</Badge>;
     }
@@ -211,7 +211,7 @@ export function UserTable({
                   </TableCell>
                   <TableCell>
                     {user.isActive ? (
-                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                      <Badge variant="success">Active</Badge>
                     ) : (
                       <Badge variant="secondary">Inactive</Badge>
                     )}
@@ -230,7 +230,7 @@ export function UserTable({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleDelete(user)}
-                          className="text-red-600"
+                          className="text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Deactivate

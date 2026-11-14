@@ -93,12 +93,12 @@ export default function ParkingPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Parking Management</h1>
+          <h1 className="type-display">Gate log</h1>
           <p className="text-muted-foreground">
-            Monitor and manage vehicle parking records
+            Vehicles entering and leaving the deck.
           </p>
         </div>
         <div className="flex gap-2">
@@ -114,7 +114,7 @@ export default function ParkingPage() {
           <Button asChild>
             <Link href="/parking/new">
               <Plus className="h-4 w-4 mr-2" />
-              New Entry
+              New entry
             </Link>
           </Button>
         </div>

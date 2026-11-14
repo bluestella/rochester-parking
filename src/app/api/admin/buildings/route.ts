@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
+import { like } from '@/lib/api';
 import { Building, AuditLog } from '@/models';
 import { requireRole } from '@/lib/rbac';
 import { createBuildingSchema, paginationSchema } from '@/lib/validations';
@@ -34,9 +35,9 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { code: { $regex: search, $options: 'i' } },
-        { address: { $regex: search, $options: 'i' } },
+        { name: like(search) },
+        { code: like(search) },
+        { address: like(search) },
       ];
     }
 

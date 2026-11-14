@@ -196,7 +196,7 @@ export function BuildingTable({
                   </TableCell>
                   <TableCell>
                     {building.isActive ? (
-                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                      <Badge variant="success">Active</Badge>
                     ) : (
                       <Badge variant="secondary">Inactive</Badge>
                     )}
@@ -215,7 +215,7 @@ export function BuildingTable({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleDelete(building)}
-                          className="text-red-600"
+                          className="text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Deactivate

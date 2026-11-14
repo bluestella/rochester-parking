@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { ParkingRecord } from '@/models';
 import { requirePermission } from '@/lib/rbac';
+import { csvResponse, toCsv } from '@/lib/csv';
+import { formatDateTime } from '@/lib/format';
 
 export async function GET(request: NextRequest) {
-  const { error } = await requirePermission('reports:export');
+  const { error } = await requirePermission("reports:export");
   if (error) return error;
 
   try {
@@ -48,36 +50,22 @@ export async function GET(request: NextRequest) {
       'Created By',
     ];
 
-    const rows = records.map((record) => {
-      const entryTime = new Date(record.entryTimestamp).toLocaleString();
-      const exitTime = record.exitTimestamp
-        ? new Date(record.exitTimestamp).toLocaleString()
-        : '';
-      const createdBy = ((record.createdBy as unknown) as { name: string })?.name || 'Unknown';
-      const duration = record.duration || '';
+    const rows = records.map((record) => [
+      record.plateNumber,
+      record.buildingName,
+      record.unitNumber,
+      record.parkingSlot,
+      formatDateTime(record.entryTimestamp),
+      record.exitTimestamp ? formatDateTime(record.exitTimestamp) : '',
+      record.duration ?? '',
+      record.status,
+      ((record.createdBy as unknown) as { name: string })?.name || 'Unknown',
+    ]);
 
-      return [
-        `"${record.plateNumber}"`,
-        `"${record.buildingName}"`,
-        `"${record.unitNumber}"`,
-        `"${record.parkingSlot}"`,
-        `"${entryTime}"`,
-        `"${exitTime}"`,
-        duration,
-        `"${record.status}"`,
-        `"${createdBy}"`,
-      ].join(',');
-    });
-
-    const csvContent = [headers.join(','), ...rows].join('\n');
-
-    return new NextResponse(csvContent, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename=parking-report-${year}-${month.toString().padStart(2, '0')}.csv`,
-      },
-    });
+    return csvResponse(
+      `parking-report-${year}-${month.toString().padStart(2, '0')}.csv`,
+      toCsv(headers, rows)
+    );
   } catch (err) {
     console.error('Error generating report:', err);
     return NextResponse.json(

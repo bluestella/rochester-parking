@@ -97,7 +97,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const updatedVehicle = await Vehicle.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
     }).lean();
 
     // Create audit log

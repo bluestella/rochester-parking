@@ -1,380 +1,177 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { CalendarCheck, ClipboardList, DoorOpen, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  Car,
-  Clock,
-  ParkingCircle,
-  History,
-  Plus,
-  Loader2,
-} from 'lucide-react';
+import { AnnouncementCard, type Announcement } from '@/components/announcements/AnnouncementCard';
+import { DataState, FormDialog, Page, PageHeader, PlateTag, SectionTitle, StatusBadge, type FieldDef } from '@/components/ds';
+import { Button } from '@/components/ui/button';
+import { visitDate } from '@/components/visitors/types';
+import { api, useApi } from '@/lib/client';
+import { formatDate, formatDateTime, formatMoney } from '@/lib/format';
 
-interface Stats {
-  totalVisitsThisMonth: number;
-  averageDurationFormatted: string;
-  mostUsedSlot: string | null;
-  currentlyParked: number;
-  activeRecords: Array<{
-    _id: string;
-    plateNumber: string;
-    parkingSlot: string;
-    entryTimestamp: string;
-  }>;
+interface Overview {
+  units: { _id: string; buildingName: string; unitNumber: string }[];
+  balance: number;
+  overdue: number;
+  nextDue: { number: string; balance: number; dueDate: string; displayStatus: string } | null;
+  bookings: { _id: string; start: string; status: string; amenityId?: { name: string } }[];
+  requests: { _id: string; title: string; status: string; ticketNumber: string }[];
+  visitors: { _id: string; visitorName: string; expectedDate: string; code: string }[];
+  announcements: Announcement[];
+  parked: { _id: string; plateNumber: string; parkingSlot: string; entryTimestamp: string }[];
 }
-
 interface Vehicle {
   _id: string;
   plateNumber: string;
   make?: string;
-  model?: string;
+  vehicleModel?: string;
   color?: string;
 }
 
-export default function ResidentPage() {
+const vehicleFields: FieldDef[] = [
+  { name: 'plateNumber', label: 'Plate number', required: true, placeholder: 'ABC 1234' },
+  { name: 'make', label: 'Make', half: true, placeholder: 'Toyota' },
+  { name: 'vehicleModel', label: 'Model', half: true, placeholder: 'Vios' },
+  { name: 'color', label: 'Colour', half: true },
+];
+
+const quickLinks = [
+  { href: '/resident/bookings', label: 'Book an amenity', icon: CalendarCheck },
+  { href: '/resident/requests', label: 'Report a problem', icon: ClipboardList },
+  { href: '/resident/visitors', label: 'Register a visitor', icon: DoorOpen },
+];
+
+export default function ResidentHomePage() {
   const { data: session } = useSession();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [addingVehicle, setAddingVehicle] = useState(false);
-  const [showVehicleForm, setShowVehicleForm] = useState(false);
-  const [vehicleForm, setVehicleForm] = useState({
-    plateNumber: '',
-    make: '',
-    vehicleModel: '',
-    color: '',
-  });
+  const { data, loading, error, reload } = useApi<Overview>('/api/overview');
+  const vehicles = useApi<Vehicle[]>('/api/resident/vehicles');
+  const [adding, setAdding] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [historyRes, vehiclesRes] = await Promise.all([
-        fetch('/api/resident/history?limit=1', { credentials: 'include' }),
-        fetch('/api/resident/vehicles', { credentials: 'include' }),
-      ]);
-
-      const historyData = await historyRes.json();
-      const vehiclesData = await vehiclesRes.json();
-
-      if (historyData.success) {
-        setStats(historyData.data.stats);
-      }
-      if (vehiclesData.success) {
-        setVehicles(vehiclesData.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddVehicle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAddingVehicle(true);
-
-    try {
-      const res = await fetch('/api/resident/vehicles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(vehicleForm),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(
-          Array.isArray(data.error)
-            ? data.error[0]?.message
-            : data.error || 'Failed to add vehicle'
-        );
-      }
-
-      toast.success('Vehicle registered successfully');
-      setVehicleForm({
-        plateNumber: '',
-        make: '',
-        vehicleModel: '',
-        color: '',
-      });
-      setShowVehicleForm(false);
-      fetchData();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setAddingVehicle(false);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8 px-4 flex justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const unit = data?.units[0];
+  const firstName = session?.user.name?.split(' ')[0] ?? '';
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">My Parking Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome, {session?.user.name}. View your parking activity.
-        </p>
-      </div>
+    <Page>
+      <PageHeader
+        title={`Hello, ${firstName}`}
+        description={unit ? `${unit.buildingName}, unit ${unit.unitNumber}` : 'Your account is not linked to a unit yet. Ask the admin office to add it.'}
+      />
+      <DataState loading={loading && !data} error={error} onRetry={reload} />
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Currently Parked</CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.currentlyParked || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              vehicles in parking
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Visits This Month</CardTitle>
-            <History className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.totalVisitsThisMonth || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              parking entries
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Duration</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.averageDurationFormatted || '-'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              per visit
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Favorite Slot</CardTitle>
-            <ParkingCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.mostUsedSlot || '-'}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              most used
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-8 lg:grid-cols-2">
-        {/* Currently Parked */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Currently Parked Vehicles</CardTitle>
-            <CardDescription>
-              Vehicles registered to your unit that are currently parked
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {stats?.activeRecords && stats.activeRecords.length > 0 ? (
-              <div className="space-y-3">
-                {stats.activeRecords.map((record) => (
-                  <div
-                    key={record._id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium">{record.plateNumber}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Slot: {record.parkingSlot}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <Badge className="bg-green-100 text-green-800">Parked</Badge>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Since {formatDate(record.entryTimestamp)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-4">
-                No vehicles currently parked
+      {data && (
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <div className="space-y-8">
+            {/* Balance: the one thing every resident opens the app for */}
+            <section className="rounded-lg border bg-card p-5">
+              <p className="text-sm text-muted-foreground">Balance due</p>
+              <p className={`type-numeral mt-1 text-5xl ${data.overdue ? 'text-danger' : ''}`}>{formatMoney(data.balance)}</p>
+              <p className="mt-2 text-sm">
+                {data.nextDue ? (
+                  <>
+                    Statement {data.nextDue.number} for {formatMoney(data.nextDue.balance)} is{' '}
+                    {data.nextDue.displayStatus === 'overdue' ? <strong className="text-danger">overdue since {formatDate(data.nextDue.dueDate)}</strong> : <>due {formatDate(data.nextDue.dueDate)}</>}.
+                  </>
+                ) : (
+                  'You are fully paid. Thank you.'
+                )}
               </p>
-            )}
-          </CardContent>
-        </Card>
+              <Button asChild className="mt-4" variant={data.balance > 0 ? 'default' : 'outline'}>
+                <Link href="/resident/dues">{data.balance > 0 ? 'View and pay dues' : 'View statements'}</Link>
+              </Button>
+            </section>
 
-        {/* Registered Vehicles */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>My Vehicles</CardTitle>
-              <CardDescription>
-                Vehicles registered to your account
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowVehicleForm(!showVehicleForm)}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {showVehicleForm && (
-              <form onSubmit={handleAddVehicle} className="space-y-4 mb-6 p-4 border rounded-lg">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="plateNumber">Plate Number *</Label>
-                    <Input
-                      id="plateNumber"
-                      value={vehicleForm.plateNumber}
-                      onChange={(e) =>
-                        setVehicleForm({
-                          ...vehicleForm,
-                          plateNumber: e.target.value.toUpperCase(),
-                        })
-                      }
-                      placeholder="ABC 1234"
-                      required
-                      className="uppercase"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="make">Make</Label>
-                    <Input
-                      id="make"
-                      value={vehicleForm.make}
-                      onChange={(e) =>
-                        setVehicleForm({ ...vehicleForm, make: e.target.value })
-                      }
-                      placeholder="e.g., Toyota"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="model">Model</Label>
-                    <Input
-                      id="model"
-                      value={vehicleForm.vehicleModel}
-                      onChange={(e) =>
-                        setVehicleForm({ ...vehicleForm, vehicleModel: e.target.value })
-                      }
-                      placeholder="e.g., Vios"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="color">Color</Label>
-                    <Input
-                      id="color"
-                      value={vehicleForm.color}
-                      onChange={(e) =>
-                        setVehicleForm({ ...vehicleForm, color: e.target.value })
-                      }
-                      placeholder="e.g., Black"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowVehicleForm(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={addingVehicle}>
-                    {addingVehicle && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Register Vehicle
-                  </Button>
-                </div>
-              </form>
-            )}
+            <nav aria-label="Shortcuts" className="grid gap-2 sm:grid-cols-3">
+              {quickLinks.map((q) => (
+                <Link key={q.href} href={q.href} className="flex items-center gap-2.5 rounded-lg border bg-card px-4 py-3 text-sm font-semibold outline-none hover:bg-accent focus-visible:bg-accent">
+                  <q.icon className="size-4 text-primary" aria-hidden /> {q.label}
+                </Link>
+              ))}
+            </nav>
 
-            {vehicles.length > 0 ? (
-              <div className="space-y-3">
-                {vehicles.map((vehicle) => (
-                  <div
-                    key={vehicle._id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium">{vehicle.plateNumber}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {vehicle.make} {vehicle.model}
-                      </p>
-                    </div>
-                    {vehicle.color && (
-                      <Badge variant="outline">{vehicle.color}</Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-4">
-                No vehicles registered yet
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            <section>
+              <SectionTitle action={<Link href="/resident/notices" className="text-sm font-semibold text-primary underline-offset-2 hover:underline">All notices</Link>}>
+                Notices
+              </SectionTitle>
+              {data.announcements.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No notices from the admin office right now.</p>
+              ) : (
+                <div className="space-y-3">{data.announcements.map((a) => <AnnouncementCard key={a._id} announcement={a} compact />)}</div>
+              )}
+            </section>
+          </div>
 
-      {/* View History Link */}
-      <div className="mt-8 text-center">
-        <Button asChild variant="outline">
-          <Link href="/resident/history">
-            <History className="h-4 w-4 mr-2" />
-            View Full Parking History
-          </Link>
-        </Button>
-      </div>
-    </div>
+          <div className="space-y-8">
+            <section>
+              <SectionTitle action={<Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus aria-hidden /> Add vehicle</Button>}>
+                My vehicles
+              </SectionTitle>
+              {(vehicles.data ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">Register your vehicle so the guards can find you by plate number.</p>
+              ) : (
+                <ul className="divide-y rounded-lg border bg-card">
+                  {vehicles.data!.map((v) => {
+                    const parked = data.parked.find((p) => p.plateNumber === v.plateNumber);
+                    return (
+                      <li key={v._id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                        <span className="flex items-center gap-3">
+                          <PlateTag plate={v.plateNumber} />
+                          <span className="text-muted-foreground">{[v.color, v.make, v.vehicleModel].filter(Boolean).join(' ')}</span>
+                        </span>
+                        {parked ? <StatusBadge status="parked">In slot {parked.parkingSlot}</StatusBadge> : <span className="text-xs text-muted-foreground">Not on the deck</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
+
+            <section>
+              <SectionTitle>Coming up</SectionTitle>
+              {data.bookings.length + data.visitors.length + data.requests.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No bookings, visitors or open requests.</p>
+              ) : (
+                <ul className="divide-y rounded-lg border bg-card text-sm">
+                  {data.bookings.map((b) => (
+                    <li key={b._id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                      <span><span className="font-medium">{b.amenityId?.name}</span><span className="block text-muted-foreground">{formatDateTime(b.start)}</span></span>
+                      <StatusBadge status={b.status} />
+                    </li>
+                  ))}
+                  {data.visitors.map((v) => (
+                    <li key={v._id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                      <span><span className="font-medium">{v.visitorName}</span><span className="block text-muted-foreground">Visiting {visitDate(v.expectedDate)}</span></span>
+                      <span className="type-stencil">{v.code}</span>
+                    </li>
+                  ))}
+                  {data.requests.map((r) => (
+                    <li key={r._id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                      <span className="min-w-0"><span className="block truncate font-medium">{r.title}</span><span className="text-muted-foreground">{r.ticketNumber}</span></span>
+                      <StatusBadge status={r.status} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
+        </div>
+      )}
+
+      <FormDialog
+        open={adding}
+        onOpenChange={setAdding}
+        title="Add vehicle"
+        fields={vehicleFields}
+        submitLabel="Add vehicle"
+        onSubmit={async (values) => {
+          const body = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== ''));
+          await api('/api/resident/vehicles', { body });
+          toast.success('Vehicle added');
+          vehicles.reload();
+        }}
+      />
+    </Page>
   );
 }

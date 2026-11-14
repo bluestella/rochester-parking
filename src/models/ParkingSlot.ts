@@ -1,5 +1,10 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+import { SLOT_TYPES } from '@/lib/constants';
+
+export { SLOT_TYPES };
+export type SlotType = (typeof SLOT_TYPES)[number];
+
 export interface IParkingSlot extends Document {
   _id: mongoose.Types.ObjectId;
   slotCode: string;
@@ -7,6 +12,10 @@ export interface IParkingSlot extends Document {
   floor: string;
   isOccupied: boolean;
   currentVehicle?: string;
+  type: SlotType;
+  assignedUnitId?: mongoose.Types.ObjectId;
+  /** Overrides the default monthly parking fee from billing settings. */
+  monthlyFee?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,6 +47,20 @@ const ParkingSlotSchema = new Schema<IParkingSlot>(
       type: String,
       uppercase: true,
       trim: true,
+    },
+    type: {
+      type: String,
+      enum: SLOT_TYPES,
+      default: 'visitor',
+    },
+    assignedUnitId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Unit',
+      index: true,
+    },
+    monthlyFee: {
+      type: Number,
+      min: 0,
     },
   },
   {

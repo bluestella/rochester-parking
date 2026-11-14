@@ -131,10 +131,10 @@ export default function AdminVehiclesPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
+          <h1 className="type-display flex items-center gap-2">
             <Car className="h-8 w-8" />
             Vehicle Management
           </h1>
@@ -251,7 +251,7 @@ export default function AdminVehiclesPage() {
                   </TableCell>
                   <TableCell>
                     {vehicle.isActive ? (
-                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                      <Badge variant="success">Active</Badge>
                     ) : (
                       <Badge variant="secondary">Inactive</Badge>
                     )}

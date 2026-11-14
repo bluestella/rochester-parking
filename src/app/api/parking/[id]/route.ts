@@ -118,7 +118,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           : record.entryTimestamp,
         updatedBy: session!.user.id,
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     // Create audit log

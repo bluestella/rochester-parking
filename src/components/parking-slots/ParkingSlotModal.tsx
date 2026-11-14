@@ -1,26 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { FormDialog, type FieldDef } from '@/components/ds';
+import { useBuildings } from '@/hooks';
+import { api, useApi } from '@/lib/client';
+import { SLOT_TYPES, options } from '@/lib/constants';
 
 interface ParkingSlot {
   _id: string;
   slotCode: string;
-  buildingName: string;
+  buildingName?: string;
   floor: string;
   isOccupied: boolean;
+  type?: string;
+  assignedUnitId?: string | { _id: string } | null;
+  monthlyFee?: number | null;
 }
 
 interface ParkingSlotModalProps {
@@ -30,130 +24,57 @@ interface ParkingSlotModalProps {
   onSuccess: () => void;
 }
 
-export function ParkingSlotModal({
-  open,
-  onOpenChange,
-  slot,
-  onSuccess,
-}: ParkingSlotModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    slotCode: '',
-    floor: '',
-  });
+export function ParkingSlotModal({ open, onOpenChange, slot, onSuccess }: ParkingSlotModalProps) {
+  const { buildings } = useBuildings();
+  const { data } = useApi<{ units: { _id: string; buildingName: string; unitNumber: string }[] }>(
+    open ? '/api/units?limit=200' : null
+  );
 
-  useEffect(() => {
-    if (slot) {
-      setFormData({
-        slotCode: slot.slotCode,
-        floor: slot.floor,
-      });
-    } else {
-      setFormData({
-        slotCode: '',
-        floor: '',
-      });
-    }
-  }, [slot, open]);
+  const fields: FieldDef[] = [
+    { name: 'slotCode', label: 'Slot code', required: true, half: true, placeholder: 'P1-A01', hint: 'As painted on the bay.' },
+    { name: 'floor', label: 'Floor', required: true, half: true, placeholder: 'P1, B1, Ground' },
+    { name: 'buildingName', label: 'Building', type: 'select', required: true, half: true, options: buildings.map((b) => ({ value: b.name, label: b.name })) },
+    { name: 'type', label: 'Use', type: 'select', required: true, half: true, options: options(SLOT_TYPES) },
+    {
+      name: 'assignedUnitId',
+      label: 'Reserved for unit',
+      type: 'select',
+      showIf: (v) => v.type === 'assigned',
+      options: (data?.units ?? []).map((u) => ({ value: u._id, label: `${u.buildingName} ${u.unitNumber}` })),
+      hint: 'The unit is billed for this slot every month.',
+    },
+    {
+      name: 'monthlyFee',
+      label: 'Monthly fee for this slot',
+      type: 'number',
+      showIf: (v) => v.type === 'assigned',
+      hint: 'Leave blank to use the standard parking fee.',
+    },
+  ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const url = slot
-        ? `/api/admin/parking-slots/${slot._id}`
-        : '/api/admin/parking-slots';
-      const method = slot ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(
-          Array.isArray(data.error)
-            ? data.error[0]?.message
-            : data.error || 'Failed to save parking slot'
-        );
-      }
-
-      toast.success(slot ? 'Parking slot updated successfully' : 'Parking slot created successfully');
-      onSuccess();
-      onOpenChange(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const assigned = slot?.assignedUnitId;
+  const initial = slot
+    ? { ...slot, type: slot.type ?? 'visitor', assignedUnitId: typeof assigned === 'object' ? assigned?._id : assigned }
+    : { type: 'visitor' };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{slot ? 'Edit Parking Slot' : 'Add New Parking Slot'}</DialogTitle>
-            <DialogDescription>
-              {slot
-                ? 'Update parking slot information.'
-                : 'Create a new parking slot.'}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="slotCode">Slot Code *</Label>
-              <Input
-                id="slotCode"
-                value={formData.slotCode}
-                onChange={(e) =>
-                  setFormData({ ...formData, slotCode: e.target.value.toUpperCase() })
-                }
-                placeholder="e.g., P1-A01"
-                className="uppercase"
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                Unique code for this parking slot
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="floor">Floor *</Label>
-              <Input
-                id="floor"
-                value={formData.floor}
-                onChange={(e) =>
-                  setFormData({ ...formData, floor: e.target.value })
-                }
-                placeholder="e.g., P1, B1, Ground"
-                required
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {slot ? 'Update' : 'Create'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={slot ? `Edit slot ${slot.slotCode}` : 'Add parking slot'}
+      fields={fields}
+      initial={initial}
+      submitLabel={slot ? 'Save slot' : 'Add slot'}
+      onSubmit={async (values) => {
+        const body: Record<string, unknown> = { ...values, slotCode: String(values.slotCode).toUpperCase() };
+        if (values.type === 'assigned' && !('monthlyFee' in values)) body.monthlyFee = '';
+        await api(slot ? `/api/admin/parking-slots/${slot._id}` : '/api/admin/parking-slots', {
+          method: slot ? 'PUT' : 'POST',
+          body,
+        });
+        toast.success(slot ? 'Slot saved' : 'Slot added');
+        onSuccess();
+      }}
+    />
   );
 }

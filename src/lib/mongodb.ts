@@ -7,11 +7,6 @@ declare global {
   };
 }
 
-const MONGODB_URI = process.env.MONGODB_URI!;
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
 
 const cached = global.mongooseCache || { conn: null, promise: null };
 global.mongooseCache = cached;
@@ -22,6 +17,12 @@ async function connectDB(): Promise<Mongoose> {
   }
 
   if (!cached.promise) {
+    // Checked at call time, not import time, so `next build` works without a database.
+    const MONGODB_URI = process.env.MONGODB_URI;
+    if (!MONGODB_URI) {
+      throw new Error('Please define the MONGODB_URI environment variable');
+    }
+
     const opts = {
       bufferCommands: false,
     };

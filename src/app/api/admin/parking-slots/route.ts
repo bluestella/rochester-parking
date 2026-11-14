@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { ParkingSlot, AuditLog } from '@/models';
+import { like } from '@/lib/api';
+import { ParkingSlot, AuditLog, type IParkingSlot } from '@/models';
 import { requireRole } from '@/lib/rbac';
-import { createParkingSlotSchema, paginationSchema } from '@/lib/validations';
+import { createParkingSlotSchema, paginationSchema, normalizeSlotInput } from '@/lib/validations';
 
 // GET /api/admin/parking-slots - Get all parking slots with pagination
 export async function GET(request: NextRequest) {
@@ -34,9 +35,9 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       query.$or = [
-        { slotCode: { $regex: search, $options: 'i' } },
-        { buildingName: { $regex: search, $options: 'i' } },
-        { floor: { $regex: search, $options: 'i' } },
+        { slotCode: like(search) },
+        { buildingName: like(search) },
+        { floor: like(search) },
       ];
     }
 
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data = validationResult.data;
+    const data = normalizeSlotInput(validationResult.data) as typeof validationResult.data;
 
     // Check if slot already exists
     const existingSlot = await ParkingSlot.findOne({ slotCode: data.slotCode });
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const slot = await ParkingSlot.create(data);
+    const slot = await ParkingSlot.create(data as unknown as Partial<IParkingSlot>);
 
     // Create audit log
     await AuditLog.create({
