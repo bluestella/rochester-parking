@@ -1,5 +1,6 @@
 'use client';
 
+import { useCan } from '@/hooks';
 import { useState } from 'react';
 import {
   Table,
@@ -69,6 +70,9 @@ export function BuildingTable({
   onStatusFilter,
   onRefresh,
 }: BuildingTableProps) {
+  const { can } = useCan();
+  const canEdit = can('buildings:update');
+  const canDelete = can('buildings:delete');
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
@@ -148,10 +152,12 @@ export function BuildingTable({
             <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
+        {can('buildings:create') && (
         <Button onClick={handleAdd}>
           <Building2 className="h-4 w-4 mr-2" />
           Add Building
         </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -202,6 +208,7 @@ export function BuildingTable({
                     )}
                   </TableCell>
                   <TableCell className="text-right">
+                    {(canEdit || canDelete) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
@@ -209,10 +216,13 @@ export function BuildingTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        {canEdit && (
                         <DropdownMenuItem onClick={() => handleEdit(building)}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
+                        )}
+                        {canDelete && (
                         <DropdownMenuItem
                           onClick={() => handleDelete(building)}
                           className="text-destructive"
@@ -220,8 +230,10 @@ export function BuildingTable({
                           <Trash2 className="h-4 w-4 mr-2" />
                           Deactivate
                         </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

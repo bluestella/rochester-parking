@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import connectDB from '@/lib/mongodb';
 import { User, AuditLog } from '@/models';
-import { requireRole } from '@/lib/rbac';
+import { canManageRole, requirePermission } from '@/lib/rbac';
 import { updateUserSchema } from '@/lib/validations';
 
 interface RouteParams {
@@ -12,7 +12,7 @@ interface RouteParams {
 
 // GET /api/admin/users/[id] - Get single user
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { error } = await requireRole(['admin']);
+  const { error } = await requirePermission('users:read');
   if (error) return error;
 
   try {
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 // PUT /api/admin/users/[id] - Update user
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('users:update');
   if (error) return error;
 
   try {
@@ -80,6 +80,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
+      );
+    }
+
+    const actorRole = session!.user.role;
+    if (
+      !canManageRole(actorRole, user.role) ||
+      (data.role && !canManageRole(actorRole, data.role))
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'You cannot change an account with that role' },
+        { status: 403 }
+      );
+    }
+    if (id === session!.user.id && (data.role && data.role !== user.role || data.isActive === false)) {
+      return NextResponse.json(
+        { success: false, error: 'You cannot change your own role or deactivate yourself' },
+        { status: 400 }
       );
     }
 
@@ -134,7 +151,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 // DELETE /api/admin/users/[id] - Soft delete user
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('users:delete');
   if (error) return error;
 
   try {
@@ -162,6 +179,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
+      );
+    }
+
+    if (!canManageRole(session!.user.role, user.role)) {
+      return NextResponse.json(
+        { success: false, error: 'You cannot deactivate an account with that role' },
+        { status: 403 }
       );
     }
 

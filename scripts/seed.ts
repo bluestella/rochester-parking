@@ -57,6 +57,9 @@ async function seed() {
   const hash = (pw: string) => bcrypt.hash(pw, 12);
   const admin = await User.create({ name: 'Maria Santos', email: 'admin@parktrack.com', passwordHash: await hash('admin123'), role: 'admin' });
   await User.create({ name: 'Ramon Cruz', email: 'guard@parktrack.com', passwordHash: await hash('guard123'), role: 'guard', createdBy: admin._id });
+  await User.create({ name: 'Elena Villanueva', email: 'superadmin@parktrack.com', passwordHash: await hash('super123'), role: 'super_admin', createdBy: admin._id });
+  await User.create({ name: 'Jose Bautista', email: 'accountant@parktrack.com', passwordHash: await hash('accountant123'), role: 'accountant', createdBy: admin._id });
+  await User.create({ name: 'Paolo Mendoza', email: 'maintenance@parktrack.com', passwordHash: await hash('maintenance123'), role: 'maintenance', createdBy: admin._id });
 
   const residentHash = await hash('resident123');
   const people = [
@@ -244,7 +247,10 @@ async function seed() {
   ]);
 
   console.log('\nSeed complete.');
+  console.log('  Super admin: superadmin@parktrack.com / super123');
   console.log('  Admin:    admin@parktrack.com / admin123');
+  console.log('  Accountant: accountant@parktrack.com / accountant123');
+  console.log('  Maintenance: maintenance@parktrack.com / maintenance123');
   console.log('  Guard:    guard@parktrack.com / guard123');
   console.log('  Resident: resident@parktrack.com / resident123');
   await mongoose.disconnect();

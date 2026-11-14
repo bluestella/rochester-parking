@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import connectDB from '@/lib/mongodb';
 import { ParkingSlot, AuditLog } from '@/models';
-import { requireRole } from '@/lib/rbac';
+import { requirePermission } from '@/lib/rbac';
 import { updateParkingSlotSchema, normalizeSlotInput } from '@/lib/validations';
 
 interface RouteParams {
@@ -11,7 +11,7 @@ interface RouteParams {
 
 // GET /api/admin/parking-slots/[id] - Get single parking slot
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { error } = await requireRole(['admin']);
+  const { error } = await requirePermission('parking_slots:read');
   if (error) return error;
 
   try {
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 // PUT /api/admin/parking-slots/[id] - Update parking slot
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('parking_slots:update');
   if (error) return error;
 
   try {
@@ -118,7 +118,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 // DELETE /api/admin/parking-slots/[id] - Delete parking slot
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('parking_slots:delete');
   if (error) return error;
 
   try {

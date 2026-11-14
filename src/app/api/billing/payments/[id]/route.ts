@@ -9,7 +9,7 @@ const schema = z.object({
 });
 
 // PATCH /api/billing/payments/[id] — confirm or reject a payment a resident reported
-export const PATCH = route({ roles: ['admin'] }, async (ctx) => {
+export const PATCH = route({ permission: 'billing:manage' }, async (ctx) => {
   const { action, note } = parse(schema, await ctx.request.json());
   const review = { reviewedBy: ctx.userId, reviewedAt: new Date(), ...(note ? { note } : {}) };
 

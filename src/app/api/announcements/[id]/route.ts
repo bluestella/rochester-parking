@@ -3,7 +3,7 @@ import { HttpError, audit, ok, parse, route } from '@/lib/api';
 import { announcementSchema } from '@/lib/validations';
 
 // PUT /api/announcements/[id]
-export const PUT = route({ roles: ['admin'] }, async (ctx) => {
+export const PUT = route({ permission: 'announcements:manage' }, async (ctx) => {
   const data = parse(announcementSchema, await ctx.request.json());
   const announcement = await Announcement.findByIdAndUpdate(
     ctx.params.id,
@@ -20,7 +20,7 @@ export const PUT = route({ roles: ['admin'] }, async (ctx) => {
 });
 
 // DELETE /api/announcements/[id]
-export const DELETE = route({ roles: ['admin'] }, async (ctx) => {
+export const DELETE = route({ permission: 'announcements:manage' }, async (ctx) => {
   const announcement = await Announcement.findByIdAndDelete(ctx.params.id);
   if (!announcement) throw new HttpError('Announcement not found', 404);
   await audit(ctx, 'delete', 'announcement', announcement._id, { title: announcement.title });

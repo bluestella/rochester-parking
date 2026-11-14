@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ROLES } from './permissions';
 import {
   ANNOUNCEMENT_CATEGORIES,
   CHARGE_KINDS,
@@ -20,7 +21,7 @@ export const createUserSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  role: z.enum(['admin', 'guard', 'resident']),
+  role: z.enum(ROLES),
   unitNumber: z.string().optional(),
   buildingName: z.string().optional(),
 });
@@ -29,7 +30,7 @@ export const updateUserSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').optional(),
   email: z.string().email('Invalid email address').optional(),
   password: z.string().min(6, 'Password must be at least 6 characters').optional(),
-  role: z.enum(['admin', 'guard', 'resident']).optional(),
+  role: z.enum(ROLES).optional(),
   unitNumber: z.string().optional(),
   buildingName: z.string().optional(),
   isActive: z.boolean().optional(),

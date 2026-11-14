@@ -3,12 +3,12 @@ import bcrypt from 'bcryptjs';
 import connectDB from '@/lib/mongodb';
 import { like } from '@/lib/api';
 import { User, AuditLog } from '@/models';
-import { requireRole } from '@/lib/rbac';
+import { canManageRole, requirePermission } from '@/lib/rbac';
 import { createUserSchema, paginationSchema } from '@/lib/validations';
 
 // GET /api/admin/users - Get all users
 export async function GET(request: NextRequest) {
-  const { error } = await requireRole(['admin']);
+  const { error } = await requirePermission('users:read');
   if (error) return error;
 
   try {
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/users - Create new user
 export async function POST(request: NextRequest) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('users:create');
   if (error) return error;
 
   try {
@@ -102,6 +102,14 @@ export async function POST(request: NextRequest) {
     }
 
     const data = validationResult.data;
+
+    // Only a super admin may create office accounts (admin, accountant, maintenance, super admin).
+    if (!canManageRole(session!.user.role, data.role)) {
+      return NextResponse.json(
+        { success: false, error: 'You cannot create an account with that role' },
+        { status: 403 }
+      );
+    }
 
     // Check if email already exists
     const existingUser = await User.findOne({ email: data.email.toLowerCase() });

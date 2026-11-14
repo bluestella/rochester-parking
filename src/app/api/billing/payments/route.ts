@@ -15,12 +15,12 @@ import { round2 } from '@/lib/format';
 import { paymentSchema } from '@/lib/validations';
 
 // GET /api/billing/payments
-export const GET = route({ roles: ['admin', 'resident'] }, async ({ request, session, role }) => {
+export const GET = route({ permission: ['billing:read', 'billing:read_own'] }, async ({ request, session, can }) => {
   const { page, limit, skip } = pageParams(request);
   const query: Record<string, unknown> = {};
   const status = request.nextUrl.searchParams.get('status');
   if (status) query.status = status;
-  if (role === 'resident') {
+  if (!can('billing:read')) {
     const units = await Unit.find(await unitFilterFor(session)).select('_id').lean();
     query.unitId = { $in: units.map((u) => u._id) };
   }
@@ -39,9 +39,9 @@ export const GET = route({ roles: ['admin', 'resident'] }, async ({ request, ses
 });
 
 // POST /api/billing/payments
-// Admins record a payment and it is applied immediately with a receipt number.
+// Billing staff record a payment and it is applied immediately with a receipt number.
 // Residents report a payment they made; it waits for the office to confirm it.
-export const POST = route({ roles: ['admin', 'resident'] }, async (ctx) => {
+export const POST = route({ permission: ['billing:manage', 'billing:read_own'] }, async (ctx) => {
   const data = parse(paymentSchema, await ctx.request.json());
   const amount = round2(data.amount);
   const paidAt = data.paidAt ? new Date(data.paidAt) : new Date();
@@ -67,7 +67,7 @@ export const POST = route({ roles: ['admin', 'resident'] }, async (ctx) => {
     submittedBy: ctx.userId,
   };
 
-  if (ctx.role === 'resident') {
+  if (!ctx.can('billing:manage')) {
     const mine = await Unit.exists({ ...(await unitFilterFor(ctx.session)), _id: invoice.unitId });
     if (!mine) throw new HttpError('Statement not found', 404);
     const already = await Payment.exists({ invoiceId: invoice._id, status: 'pending' });

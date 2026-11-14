@@ -50,7 +50,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 // PUT /api/parking/[id] - Update parking record (admin only)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requireRole(['admin']);
+  // Correcting a gate entry is an office task, not a guard task.
+  const { error, session } = await requireRole(['super_admin', 'admin']);
   if (error) return error;
 
   try {
@@ -143,7 +144,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 // DELETE /api/parking/[id] - Delete parking record (admin only)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('parking:delete');
   if (error) return error;
 
   try {

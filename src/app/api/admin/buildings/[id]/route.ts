@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import connectDB from '@/lib/mongodb';
 import { Building, AuditLog } from '@/models';
-import { requireRole } from '@/lib/rbac';
+import { requirePermission } from '@/lib/rbac';
 import { updateBuildingSchema } from '@/lib/validations';
 
 interface RouteParams {
@@ -11,7 +11,7 @@ interface RouteParams {
 
 // GET /api/admin/buildings/[id] - Get single building
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { error } = await requireRole(['admin']);
+  const { error } = await requirePermission('buildings:read');
   if (error) return error;
 
   try {
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 // PUT /api/admin/buildings/[id] - Update building
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('buildings:update');
   if (error) return error;
 
   try {
@@ -131,7 +131,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 // DELETE /api/admin/buildings/[id] - Soft delete building
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('buildings:delete');
   if (error) return error;
 
   try {

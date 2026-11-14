@@ -2,14 +2,14 @@ import { ParkingSlot, Unit, User } from '@/models';
 import { audit, like, ok, pageParams, paginated, parse, route, unitFilterFor } from '@/lib/api';
 import { unitSchema } from '@/lib/validations';
 
-// GET /api/units — staff see every unit; residents see their own
-export const GET = route({}, async ({ request, session, role }) => {
+// GET /api/units — office staff see every unit; residents see their own
+export const GET = route({ permission: ['units:read', 'resident_portal:access'] }, async ({ request, session, can }) => {
   const sp = request.nextUrl.searchParams;
   const { page, limit, skip } = pageParams(request, 50);
 
   const query: Record<string, unknown> =
-    role === 'resident' ? await unitFilterFor(session) : { isActive: true };
-  if (role !== 'resident') {
+    can('units:read') ? { isActive: true } : await unitFilterFor(session);
+  if (can('units:read')) {
     const search = sp.get('search');
     if (sp.get('buildingName')) query.buildingName = sp.get('buildingName');
     if (search) {
@@ -46,7 +46,7 @@ export const GET = route({}, async ({ request, session, role }) => {
 });
 
 // POST /api/units
-export const POST = route({ roles: ['admin'] }, async (ctx) => {
+export const POST = route({ permission: 'units:manage' }, async (ctx) => {
   const data = parse(unitSchema, await ctx.request.json());
   const unit = await Unit.create({ ...data, ownerId: data.ownerId || undefined });
   await audit(ctx, 'create', 'unit', unit._id, {

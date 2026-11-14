@@ -57,17 +57,32 @@ Condominium management built with Next.js 15, MongoDB and NextAuth.js: parking, 
 
 | Role | Email | Password |
 |------|-------|----------|
+| Super admin | superadmin@parktrack.com | super123 |
 | Admin | admin@parktrack.com | admin123 |
+| Accountant | accountant@parktrack.com | accountant123 |
+| Maintenance | maintenance@parktrack.com | maintenance123 |
 | Guard | guard@parktrack.com | guard123 |
 | Resident | resident@parktrack.com | resident123 |
 
 ## User Roles
 
-### Admin
-- Full access to all features
-- Manage users (create, edit, deactivate)
-- View all parking records
-- Register vehicles for any owner
+### Super admin
+- Full access to every feature
+- The only role that can create or change office accounts (super admin, admin, accountant, maintenance)
+- Billing settings, hard deletes (parking records, buildings, slots, units) and the activity log
+
+### Admin (property administration)
+- Residents and guards, units, buildings, parking slots, vehicles
+- Gate log, visitors, amenities and bookings, service requests, announcements
+- Billing is view-only; equipment is view-only
+
+### Accountant
+- Dues and billing: issue statements, record and confirm payments, late charges, rates, CSV export
+- Read-only access to units and residents for billing
+
+### Maintenance
+- Service requests (triage, status, assignment)
+- Equipment and preventive maintenance
 
 ### Guard
 - Record vehicle entries and exits

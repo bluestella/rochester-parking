@@ -5,6 +5,7 @@ import { Home, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DataState, EmptyState, FormDialog, Page, PageHeader, StatusBadge, type FieldDef, type FormValues } from '@/components/ds';
 import { Button } from '@/components/ui/button';
+import { useCan } from '@/hooks';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useBuildings } from '@/hooks';
@@ -40,6 +41,9 @@ export default function UnitsPage() {
     '/api/admin/users?role=resident&limit=100'
   );
   const { buildings } = useBuildings();
+  const { can } = useCan();
+  const canManage = can('units:manage');
+  const canRetire = can('units:delete');
   const [editing, setEditing] = useState<Unit | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -88,9 +92,11 @@ export default function UnitsPage() {
   return (
     <Page>
       <PageHeader title="Units" description="Every unit, who owns it, and what it is billed each month.">
-        <Button onClick={() => { setEditing(null); setOpen(true); }}>
-          <Plus aria-hidden /> Add unit
-        </Button>
+        {canManage && (
+          <Button onClick={() => { setEditing(null); setOpen(true); }}>
+            <Plus aria-hidden /> Add unit
+          </Button>
+        )}
       </PageHeader>
 
       <form onSubmit={(e) => { e.preventDefault(); setQuery(search); }} className="mb-4 flex max-w-md gap-2">
@@ -140,12 +146,16 @@ export default function UnitsPage() {
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(monthly(unit))}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon-sm" aria-label={`Edit ${unit.unitNumber}`} onClick={() => { setEditing(unit); setOpen(true); }}>
-                      <Pencil aria-hidden />
-                    </Button>
-                    <Button variant="ghost" size="icon-sm" aria-label={`Retire ${unit.unitNumber}`} onClick={() => remove(unit)}>
-                      <Trash2 aria-hidden />
-                    </Button>
+                    {canManage && (
+                      <Button variant="ghost" size="icon-sm" aria-label={`Edit ${unit.unitNumber}`} onClick={() => { setEditing(unit); setOpen(true); }}>
+                        <Pencil aria-hidden />
+                      </Button>
+                    )}
+                    {canRetire && (
+                      <Button variant="ghost" size="icon-sm" aria-label={`Retire ${unit.unitNumber}`} onClick={() => remove(unit)}>
+                        <Trash2 aria-hidden />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

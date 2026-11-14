@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import connectDB from '@/lib/mongodb';
 import { Equipment, AuditLog } from '@/models';
-import { requireRole } from '@/lib/rbac';
+import { requirePermission } from '@/lib/rbac';
 import { updateEquipmentSchema } from '@/lib/validations';
 
 interface RouteParams {
@@ -11,7 +11,7 @@ interface RouteParams {
 
 // GET /api/admin/equipments/[id] - Get single equipment
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { error } = await requireRole(['admin']);
+  const { error } = await requirePermission('equipment:read');
   if (error) return error;
 
   try {
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 // PUT /api/admin/equipments/[id] - Update equipment
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('equipment:manage');
   if (error) return error;
 
   try {
@@ -120,7 +120,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 // DELETE /api/admin/equipments/[id] - Delete equipment
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('equipment:manage');
   if (error) return error;
 
   try {

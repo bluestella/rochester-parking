@@ -1,5 +1,6 @@
 'use client';
 
+import { useCan } from '@/hooks';
 import { useState } from 'react';
 import {
   Table,
@@ -60,6 +61,9 @@ export function EquipmentTable({
   onSearch,
   onRefresh,
 }: EquipmentTableProps) {
+  const { can } = useCan();
+  const canEdit = can('equipment:manage');
+  const canDelete = can('equipment:manage');
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(
@@ -138,10 +142,12 @@ export function EquipmentTable({
             Search
           </Button>
         </form>
+        {can('equipment:manage') && (
         <Button onClick={handleAdd}>
           <Wrench className="h-4 w-4 mr-2" />
           Add Equipment
         </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -191,6 +197,7 @@ export function EquipmentTable({
                     {equipment.partsInventory || '-'}
                   </TableCell>
                   <TableCell className="text-right">
+                    {(canEdit || canDelete) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
@@ -198,10 +205,13 @@ export function EquipmentTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        {canEdit && (
                         <DropdownMenuItem onClick={() => handleEdit(equipment)}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
+                        )}
+                        {canDelete && (
                         <DropdownMenuItem
                           onClick={() => handleDelete(equipment)}
                           className="text-destructive"
@@ -209,8 +219,10 @@ export function EquipmentTable({
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete
                         </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

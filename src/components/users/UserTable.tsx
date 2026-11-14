@@ -26,6 +26,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserModal } from './UserModal';
+import { useCan } from '@/hooks';
+import { ROLES, ROLE_LABELS, canManageRole, type Role } from '@/lib/permissions';
 import {
   Search,
   MoreVertical,
@@ -41,7 +43,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'admin' | 'guard' | 'resident';
+  role: Role;
   unitNumber?: string;
   buildingName?: string;
   isActive: boolean;
@@ -70,6 +72,7 @@ export function UserTable({
   onRoleFilter,
   onRefresh,
 }: UserTableProps) {
+  const { can, role: actorRole } = useCan();
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -113,10 +116,14 @@ export function UserTable({
     }
   };
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role: Role) => {
     switch (role) {
+      case 'super_admin':
       case 'admin':
-        return <Badge className="bg-purple-100 text-purple-800">Admin</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800">{ROLE_LABELS[role]}</Badge>;
+      case 'accountant':
+      case 'maintenance':
+        return <Badge variant="warning">{ROLE_LABELS[role]}</Badge>;
       case 'guard':
         return <Badge variant="info">Guard</Badge>;
       case 'resident':
@@ -158,15 +165,19 @@ export function UserTable({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="guard">Guard</SelectItem>
-            <SelectItem value="resident">Resident</SelectItem>
+            {ROLES.map((r) => (
+              <SelectItem key={r} value={r}>
+                {ROLE_LABELS[r]}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
-        <Button onClick={handleAdd}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add User
-        </Button>
+        {can('users:create') && (
+          <Button onClick={handleAdd}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -217,6 +228,7 @@ export function UserTable({
                     )}
                   </TableCell>
                   <TableCell className="text-right">
+                    {canManageRole(actorRole, user.role) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
@@ -237,6 +249,7 @@ export function UserTable({
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

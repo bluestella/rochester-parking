@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { ParkingSlot, type IParkingSlot } from '@/models';
-import { requireAuth, requireRole } from '@/lib/rbac';
+import { requireAuth, requirePermission } from '@/lib/rbac';
 import { createParkingSlotSchema, normalizeSlotInput } from '@/lib/validations';
 
 // GET /api/parking-slots - Get all parking slots
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/parking-slots - Create parking slot (Admin only)
 export async function POST(request: NextRequest) {
-  const { error } = await requireRole(['admin']);
+  const { error } = await requirePermission('parking_slots:create');
   if (error) return error;
 
   try {

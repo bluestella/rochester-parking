@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import type { Session } from 'next-auth';
 import type { ZodType } from 'zod';
 import connectDB from './mongodb';
-import { hasPermission, requireAuth, type Permission, type Role } from './rbac';
+import { hasAnyPermission, hasPermission, requireAuth, type Permission, type Role } from './rbac';
 import { AuditLog, Counter } from '@/models';
 
 export const ok = (data: unknown, status = 200) =>
@@ -64,11 +64,14 @@ export interface RouteContext {
   role: Role;
   userId: string;
   params: Record<string, string>;
+  /** Whether the signed-in user holds `permission`. */
+  can: (permission: Permission) => boolean;
 }
 
 interface RouteOptions {
   roles?: Role[];
-  permission?: Permission;
+  /** Required permission; with a list, any one of them is enough. */
+  permission?: Permission | Permission[];
 }
 
 /**
@@ -88,8 +91,11 @@ export function route(
     const role = session!.user.role as Role;
 
     if (options.roles && !options.roles.includes(role)) return fail('Forbidden', 403);
-    if (options.permission && !hasPermission(role, options.permission)) {
-      return fail('Forbidden', 403);
+    if (options.permission) {
+      const allowed = Array.isArray(options.permission)
+        ? hasAnyPermission(role, options.permission)
+        : hasPermission(role, options.permission);
+      if (!allowed) return fail('Forbidden', 403);
     }
 
     try {
@@ -106,6 +112,7 @@ export function route(
         role,
         userId: session!.user.id,
         params,
+        can: (permission) => hasPermission(role, permission),
       });
     } catch (err) {
       if (err instanceof HttpError) return fail(err.message, err.status);

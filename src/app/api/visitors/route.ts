@@ -16,11 +16,11 @@ const dayRange = (day: string) => {
 // GET /api/visitors
 //   guards/admins: ?date=YYYY-MM-DD (the gate list for that day), optional ?search=
 //   residents: the passes they created
-export const GET = route({}, async ({ request, role, userId }) => {
+export const GET = route({ permission: ['visitors:manage', 'visitors:manage_own'] }, async ({ request, userId, can }) => {
   const sp = request.nextUrl.searchParams;
   const query: Record<string, unknown> = {};
 
-  if (role === 'resident') {
+  if (!can('visitors:manage')) {
     query.hostId = userId;
   } else {
     const date = sp.get('date');
@@ -45,10 +45,10 @@ export const GET = route({}, async ({ request, role, userId }) => {
 });
 
 // POST /api/visitors — residents pre-register a guest; guards log a walk-in
-export const POST = route({}, async (ctx) => {
+export const POST = route({ permission: ['visitors:manage', 'visitors:manage_own'] }, async (ctx) => {
   const data = parse(visitorSchema, await ctx.request.json());
   const { user } = ctx.session;
-  const isResident = ctx.role === 'resident';
+  const isResident = !ctx.can('visitors:manage');
 
   const buildingName = isResident ? user.buildingName : data.buildingName;
   const unitNumber = isResident ? user.unitNumber : data.unitNumber;

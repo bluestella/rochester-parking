@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { like } from '@/lib/api';
 import { Equipment, AuditLog } from '@/models';
-import { requireRole } from '@/lib/rbac';
+import { requirePermission } from '@/lib/rbac';
 import { createEquipmentSchema, paginationSchema } from '@/lib/validations';
 
 // GET /api/admin/equipments - Get all equipment
 export async function GET(request: NextRequest) {
-  const { error } = await requireRole(['admin']);
+  const { error } = await requirePermission('equipment:read');
   if (error) return error;
 
   try {
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/equipments - Create equipment
 export async function POST(request: NextRequest) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('equipment:manage');
   if (error) return error;
 
   try {

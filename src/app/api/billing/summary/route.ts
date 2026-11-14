@@ -5,7 +5,7 @@ import { currentPeriod, round2 } from '@/lib/format';
 const DAY = 24 * 60 * 60 * 1000;
 
 // GET /api/billing/summary?period=YYYY-MM — collection and receivables at a glance
-export const GET = route({ roles: ['admin'] }, async ({ request }) => {
+export const GET = route({ permission: 'billing:read' }, async ({ request }) => {
   const period = request.nextUrl.searchParams.get('period') || currentPeriod();
   const now = Date.now();
 
