@@ -3,7 +3,7 @@ import { HttpError, audit, ok, parse, route } from '@/lib/api';
 import { unitSchema } from '@/lib/validations';
 
 // PUT /api/units/[id]
-export const PUT = route({ roles: ['admin'] }, async (ctx) => {
+export const PUT = route({ permission: 'units:manage' }, async (ctx) => {
   const data = parse(unitSchema.partial(), await ctx.request.json());
   const update: Record<string, unknown> = { ...data };
   const unset: Record<string, 1> = {};
@@ -22,7 +22,7 @@ export const PUT = route({ roles: ['admin'] }, async (ctx) => {
 });
 
 // DELETE /api/units/[id] — retire a unit; its billing history is kept
-export const DELETE = route({ roles: ['admin'] }, async (ctx) => {
+export const DELETE = route({ permission: 'units:delete' }, async (ctx) => {
   const open = await Invoice.countDocuments({ unitId: ctx.params.id, status: 'open' });
   if (open > 0) {
     throw new HttpError(`This unit has ${open} unpaid statement(s). Settle or void them first.`);

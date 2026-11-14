@@ -15,12 +15,12 @@ import { invoiceView, sumItems } from '@/lib/billing';
 import { createInvoiceSchema } from '@/lib/validations';
 
 // GET /api/billing/invoices — admins see all statements; residents see their units'
-export const GET = route({ roles: ['admin', 'resident'] }, async ({ request, session, role }) => {
+export const GET = route({ permission: ['billing:read', 'billing:read_own'] }, async ({ request, session, can }) => {
   const sp = request.nextUrl.searchParams;
   const { page, limit, skip } = pageParams(request);
   const query: Record<string, unknown> = {};
 
-  if (role === 'resident') {
+  if (!can('billing:read')) {
     const units = await Unit.find(await unitFilterFor(session)).select('_id').lean();
     query.unitId = { $in: units.map((u) => u._id) };
     query.status = { $ne: 'void' };
@@ -33,7 +33,7 @@ export const GET = route({ roles: ['admin', 'resident'] }, async ({ request, ses
   if (status === 'paid' || status === 'void') query.status = status;
   if (status === 'open') query.status = 'open';
   if (status === 'overdue') Object.assign(query, { status: 'open', dueDate: { $lt: new Date() } });
-  if (search && role === 'admin') {
+  if (search && can('billing:read')) {
     query.$or = [{ unitNumber: like(search) }, { number: like(search) }, { buildingName: like(search) }];
   }
 
@@ -49,7 +49,7 @@ export const GET = route({ roles: ['admin', 'resident'] }, async ({ request, ses
 });
 
 // POST /api/billing/invoices — one-off statement (repairs, move-in fees, etc.)
-export const POST = route({ roles: ['admin'] }, async (ctx) => {
+export const POST = route({ permission: 'billing:manage' }, async (ctx) => {
   const data = parse(createInvoiceSchema, await ctx.request.json());
   const unit = await Unit.findById(data.unitId);
   if (!unit) throw new HttpError('Unit not found', 404);

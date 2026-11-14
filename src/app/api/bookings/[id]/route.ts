@@ -10,20 +10,20 @@ const schema = z.object({
 });
 
 // PATCH /api/bookings/[id]
-export const PATCH = route({ roles: ['admin', 'resident'] }, async (ctx) => {
+export const PATCH = route({ permission: ['bookings:manage', 'bookings:own'] }, async (ctx) => {
   const { action, note } = parse(schema, await ctx.request.json());
   const booking = await Booking.findById(ctx.params.id);
   if (!booking) throw new HttpError('Booking not found', 404);
 
   if (action === 'cancel') {
     const isOwner = String(booking.residentId) === ctx.userId;
-    if (ctx.role !== 'admin' && !isOwner) throw new HttpError('Booking not found', 404);
+    if (!ctx.can('bookings:manage') && !isOwner) throw new HttpError('Booking not found', 404);
     if (!['pending', 'approved'].includes(booking.status)) {
       throw new HttpError('This booking is already closed');
     }
     booking.status = 'cancelled';
   } else {
-    if (ctx.role !== 'admin') throw new HttpError('Forbidden', 403);
+    if (!ctx.can('bookings:manage')) throw new HttpError('Forbidden', 403);
     if (booking.status !== 'pending') throw new HttpError('This booking has already been decided');
 
     if (action === 'approve') {

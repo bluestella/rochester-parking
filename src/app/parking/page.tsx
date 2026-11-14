@@ -1,5 +1,6 @@
 'use client';
 
+import { hasPermission } from '@/lib/permissions';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -110,7 +111,7 @@ export default function ParkingPage() {
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          {session?.user?.role === 'admin' && <ExportReportButton />}
+          {hasPermission(session?.user?.role ?? '', 'reports:export') && <ExportReportButton />}
           <Button asChild>
             <Link href="/parking/new">
               <Plus className="h-4 w-4 mr-2" />

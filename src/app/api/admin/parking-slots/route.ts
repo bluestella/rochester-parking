@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { like } from '@/lib/api';
 import { ParkingSlot, AuditLog, type IParkingSlot } from '@/models';
-import { requireRole } from '@/lib/rbac';
+import { requirePermission } from '@/lib/rbac';
 import { createParkingSlotSchema, paginationSchema, normalizeSlotInput } from '@/lib/validations';
 
 // GET /api/admin/parking-slots - Get all parking slots with pagination
 export async function GET(request: NextRequest) {
-  const { error } = await requireRole(['admin']);
+  const { error } = await requirePermission('parking_slots:read');
   if (error) return error;
 
   try {
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/parking-slots - Create parking slot
 export async function POST(request: NextRequest) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('parking_slots:create');
   if (error) return error;
 
   try {

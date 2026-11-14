@@ -6,7 +6,7 @@ import { billingSettingsSchema } from '@/lib/validations';
 export const GET = route({}, async () => ok(await getBillingSettings()));
 
 // PUT /api/billing/settings
-export const PUT = route({ roles: ['admin'] }, async (ctx) => {
+export const PUT = route({ permission: 'billing:settings' }, async (ctx) => {
   const data = parse(billingSettingsSchema, await ctx.request.json());
   const settings = await BillingSettings.findOneAndUpdate(
     { key: 'default' },

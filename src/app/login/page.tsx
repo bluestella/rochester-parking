@@ -121,7 +121,10 @@ export default function LoginPage() {
           {process.env.NODE_ENV !== 'production' && (
             <div className="mt-8 rounded-md border border-dashed p-3 text-xs text-muted-foreground">
               <p className="font-semibold text-foreground">Demo accounts (development only)</p>
+              <p>superadmin@parktrack.com / super123</p>
               <p>admin@parktrack.com / admin123</p>
+              <p>accountant@parktrack.com / accountant123</p>
+              <p>maintenance@parktrack.com / maintenance123</p>
               <p>guard@parktrack.com / guard123</p>
               <p>resident@parktrack.com / resident123</p>
             </div>

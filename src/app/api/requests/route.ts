@@ -2,11 +2,12 @@ import { ServiceRequest } from '@/models';
 import { audit, like, nextNumber, ok, pageParams, paginated, parse, route } from '@/lib/api';
 import { serviceRequestSchema } from '@/lib/validations';
 
-// GET /api/requests — admins see all tickets; everyone else sees the ones they filed
-export const GET = route({}, async ({ request, role, userId }) => {
+// GET /api/requests — admin and maintenance staff see all tickets; everyone else sees the ones they filed
+export const GET = route({}, async ({ request, userId, can }) => {
   const sp = request.nextUrl.searchParams;
   const { page, limit, skip } = pageParams(request, 50);
-  const query: Record<string, unknown> = role === 'admin' ? {} : { requesterId: userId };
+  const seeAll = can('requests:read_all');
+  const query: Record<string, unknown> = seeAll ? {} : { requesterId: userId };
 
   const status = sp.get('status');
   if (status === 'active') query.status = { $in: ['open', 'in_progress', 'on_hold'] };
@@ -23,7 +24,7 @@ export const GET = route({}, async ({ request, role, userId }) => {
       .populate('requesterId', 'name')
       .lean(),
     ServiceRequest.countDocuments(query),
-    role === 'admin'
+    seeAll
       ? ServiceRequest.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }])
       : [],
   ]);

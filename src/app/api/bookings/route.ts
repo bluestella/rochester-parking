@@ -26,7 +26,7 @@ function atProperty(date: Date) {
 // GET /api/bookings
 //   ?amenityId=&from=&to=  → taken time ranges for the booking form (no personal details)
 //   otherwise              → admins: all bookings; residents: their own
-export const GET = route({ roles: ['admin', 'resident'] }, async ({ request, role, userId }) => {
+export const GET = route({ permission: ['bookings:manage', 'bookings:own'] }, async ({ request, userId, can }) => {
   const sp = request.nextUrl.searchParams;
   const amenityId = sp.get('amenityId');
 
@@ -46,7 +46,7 @@ export const GET = route({ roles: ['admin', 'resident'] }, async ({ request, rol
     return ok(taken);
   }
 
-  const query: Record<string, unknown> = role === 'resident' ? { residentId: userId } : {};
+  const query: Record<string, unknown> = can('bookings:manage') ? {} : { residentId: userId };
   const status = sp.get('status');
   if (status) query.status = status;
 
@@ -60,7 +60,7 @@ export const GET = route({ roles: ['admin', 'resident'] }, async ({ request, rol
 });
 
 // POST /api/bookings
-export const POST = route({ roles: ['admin', 'resident'] }, async (ctx) => {
+export const POST = route({ permission: ['bookings:manage', 'bookings:own'] }, async (ctx) => {
   const data = parse(bookingSchema, await ctx.request.json());
   const start = new Date(data.start);
   const end = new Date(data.end);
@@ -99,7 +99,7 @@ export const POST = route({ roles: ['admin', 'resident'] }, async (ctx) => {
     guests: data.guests,
     purpose: data.purpose,
     fee: round2(hours * amenity.feePerHour),
-    status: amenity.requiresApproval && ctx.role !== 'admin' ? 'pending' : 'approved',
+    status: amenity.requiresApproval && !ctx.can('bookings:manage') ? 'pending' : 'approved',
   });
   await audit(ctx, 'create', 'booking', booking._id, { amenity: amenity.name, start, end });
   return ok(booking, 201);

@@ -5,13 +5,15 @@ import { useSession } from 'next-auth/react';
 import { ChevronRight, CircleCheck } from 'lucide-react';
 import { DataState, Meter, Page, PageHeader, SectionTitle, Stat, StatStrip, StatusBadge } from '@/components/ds';
 import { useApi } from '@/lib/client';
+import { useCan } from '@/hooks';
+import { ROLE_LABELS, isRole } from '@/lib/permissions';
 import { label } from '@/lib/constants';
 import { formatDate, formatDateTime, formatMoney, formatPeriod } from '@/lib/format';
 
 interface Overview {
   period: string;
   units: number;
-  parking: { slots: number; occupied: number; free: number };
+  parking: { slots: number; occupied: number; free: number } | null;
   billing: {
     billed: number;
     collected: number;
@@ -20,12 +22,13 @@ interface Overview {
     overdueCount: number;
     overdueAmount: number;
     pendingPayments: number;
+    canConfirm: boolean;
   } | null;
   requests: {
     active: number;
     urgent: number;
     latest: { _id: string; ticketNumber: string; title: string; priority: string; status: string; unitNumber?: string }[];
-  };
+  } | null;
   pendingBookings: number;
   visitorsToday: number;
   equipmentDue: { _id: string; equipmentId: string; make: string; equipmentModel: string; preventativeMaintenanceSchedule: string }[];
@@ -50,17 +53,18 @@ function describe(action: string, resource: string) {
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+  const { can, role } = useCan();
   const { data, loading, error, reload } = useApi<Overview>('/api/overview');
 
   // The work queue: only things that need a person, most pressing first.
   const queue = data
     ? [
-        data.requests.urgent > 0 && { tone: 'urgent', text: `${data.requests.urgent} high-priority service request${data.requests.urgent === 1 ? '' : 's'} open`, href: '/admin/requests' },
-        data.billing && data.billing.pendingPayments > 0 && { tone: 'pending', text: `${data.billing.pendingPayments} reported payment${data.billing.pendingPayments === 1 ? '' : 's'} to confirm`, href: '/admin/billing' },
-        data.pendingBookings > 0 && { tone: 'pending', text: `${data.pendingBookings} amenity booking${data.pendingBookings === 1 ? '' : 's'} waiting for approval`, href: '/admin/amenities' },
+        data.requests && data.requests.urgent > 0 && { tone: 'urgent', text: `${data.requests.urgent} high-priority service request${data.requests.urgent === 1 ? '' : 's'} open`, href: '/admin/requests' },
+        data.billing && data.billing.canConfirm && data.billing.pendingPayments > 0 && { tone: 'pending', text: `${data.billing.pendingPayments} reported payment${data.billing.pendingPayments === 1 ? '' : 's'} to confirm`, href: '/admin/billing' },
+        can('bookings:manage') && data.pendingBookings > 0 && { tone: 'pending', text: `${data.pendingBookings} amenity booking${data.pendingBookings === 1 ? '' : 's'} waiting for approval`, href: '/admin/amenities' },
         data.billing && data.billing.overdueCount > 0 && { tone: 'overdue', text: `${data.billing.overdueCount} statement${data.billing.overdueCount === 1 ? '' : 's'} overdue, ${formatMoney(data.billing.overdueAmount)} in total`, href: '/admin/billing' },
         data.equipmentDue.length > 0 && { tone: 'maintenance', text: `${data.equipmentDue.length} equipment item${data.equipmentDue.length === 1 ? '' : 's'} due for maintenance within two weeks`, href: '/admin/equipments' },
-        data.visitorsToday > 0 && { tone: 'expected', text: `${data.visitorsToday} visitor${data.visitorsToday === 1 ? '' : 's'} expected today`, href: '/parking/visitors' },
+        can('visitors:manage') && data.visitorsToday > 0 && { tone: 'expected', text: `${data.visitorsToday} visitor${data.visitorsToday === 1 ? '' : 's'} expected today`, href: '/parking/visitors' },
       ].filter(Boolean) as { tone: string; text: string; href: string }[]
     : [];
 
@@ -68,18 +72,18 @@ export default function DashboardPage() {
     <Page>
       <PageHeader
         title="Overview"
-        description={`${new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}. Signed in as ${session?.user.name ?? ''}.`}
+        description={`${new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}. Signed in as ${session?.user.name ?? ''}${isRole(role) ? ` (${ROLE_LABELS[role]})` : ''}.`}
       />
       <DataState loading={loading && !data} error={error} onRetry={reload} />
 
       {data && (
         <div className="space-y-8">
           <StatStrip>
-            <Stat
+            {data.parking && <Stat
               label="Parking bays free"
               value={<>{data.parking.free}<span className="text-base text-muted-foreground"> / {data.parking.slots}</span></>}
               hint={<span className="mt-1.5 block"><Meter value={data.parking.occupied} max={data.parking.slots || 1} tone="line" label="Parking occupancy" /><span className="mt-1 block">{data.parking.occupied} occupied</span></span>}
-            />
+            />}
             {data.billing && (
               <>
                 <Stat
@@ -90,7 +94,7 @@ export default function DashboardPage() {
                 <Stat label="Outstanding dues" value={formatMoney(data.billing.outstanding)} tone={data.billing.overdueCount ? 'danger' : 'neutral'} hint={`${data.billing.overdueCount} overdue`} />
               </>
             )}
-            <Stat label="Open service requests" value={data.requests.active} hint={`Across ${data.units} units`} />
+            {data.requests && <Stat label="Open service requests" value={data.requests.active} hint={`Across ${data.units} units`} />}
           </StatStrip>
 
           <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -116,7 +120,7 @@ export default function DashboardPage() {
                 </ul>
               )}
 
-              <div className="mt-8">
+              {data.requests && <div className="mt-8">
                 <SectionTitle action={<Link href="/admin/requests" className="text-sm font-semibold text-primary underline-offset-2 hover:underline">All requests</Link>}>
                   Latest service requests
                 </SectionTitle>
@@ -135,7 +139,7 @@ export default function DashboardPage() {
                     ))}
                   </ul>
                 )}
-              </div>
+              </div>}
             </section>
 
             <div className="space-y-8">
@@ -157,7 +161,7 @@ export default function DashboardPage() {
                   </ul>
                 </section>
               )}
-              <section>
+              {can('audit:read') && <section>
                 <SectionTitle action={<Link href="/admin/logs" className="text-sm font-semibold text-primary underline-offset-2 hover:underline">Full log</Link>}>
                   Recent activity
                 </SectionTitle>
@@ -174,7 +178,7 @@ export default function DashboardPage() {
                     ))}
                   </ol>
                 )}
-              </section>
+              </section>}
             </div>
           </div>
         </div>

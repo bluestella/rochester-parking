@@ -2,7 +2,7 @@ import { AuditLog } from '@/models';
 import { ok, pageParams, paginated, route } from '@/lib/api';
 
 // GET /api/admin/logs — who did what, newest first
-export const GET = route({ roles: ['admin'] }, async ({ request }) => {
+export const GET = route({ permission: 'audit:read' }, async ({ request }) => {
   const { page, limit, skip } = pageParams(request, 30);
   const resource = request.nextUrl.searchParams.get('resource');
   const query = resource ? { resource } : {};

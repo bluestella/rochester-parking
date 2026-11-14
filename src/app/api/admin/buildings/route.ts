@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { like } from '@/lib/api';
 import { Building, AuditLog } from '@/models';
-import { requireRole } from '@/lib/rbac';
+import { requirePermission } from '@/lib/rbac';
 import { createBuildingSchema, paginationSchema } from '@/lib/validations';
 
 // GET /api/admin/buildings - Get all buildings (paginated)
 export async function GET(request: NextRequest) {
-  const { error } = await requireRole(['admin']);
+  const { error } = await requirePermission('buildings:read');
   if (error) return error;
 
   try {
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/buildings - Create building
 export async function POST(request: NextRequest) {
-  const { error, session } = await requireRole(['admin']);
+  const { error, session } = await requirePermission('buildings:create');
   if (error) return error;
 
   try {

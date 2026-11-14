@@ -1,5 +1,6 @@
 'use client';
 
+import { useCan } from '@/hooks';
 import { useState } from 'react';
 import {
   Table,
@@ -72,6 +73,9 @@ export function ParkingSlotTable({
   onStatusFilter,
   onRefresh,
 }: ParkingSlotTableProps) {
+  const { can } = useCan();
+  const canEdit = can('parking_slots:update');
+  const canDelete = can('parking_slots:delete');
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<ParkingSlot | null>(null);
@@ -156,10 +160,12 @@ export function ParkingSlotTable({
             <SelectItem value="occupied">Occupied</SelectItem>
           </SelectContent>
         </Select>
+        {can('parking_slots:create') && (
         <Button onClick={handleAdd}>
           <ParkingCircle className="h-4 w-4 mr-2" />
           Add Slot
         </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -207,6 +213,7 @@ export function ParkingSlotTable({
                     )}
                   </TableCell>
                   <TableCell className="text-right">
+                    {(canEdit || canDelete) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
@@ -214,10 +221,13 @@ export function ParkingSlotTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        {canEdit && (
                         <DropdownMenuItem onClick={() => handleEdit(slot)}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
+                        )}
+                        {canDelete && (
                         <DropdownMenuItem
                           onClick={() => handleDelete(slot)}
                           className="text-destructive"
@@ -226,8 +236,10 @@ export function ParkingSlotTable({
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete
                         </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

@@ -13,18 +13,19 @@ const transitions = {
 } as const;
 
 // PATCH /api/visitors/[id]
-export const PATCH = route({}, async (ctx) => {
+export const PATCH = route({ permission: ['visitors:manage', 'visitors:manage_own'] }, async (ctx) => {
+  const isStaff = ctx.can('visitors:manage');
   const { action } = parse(schema, await ctx.request.json());
   const filter: Record<string, unknown> = { _id: ctx.params.id, status: transitions[action].from };
 
-  if (ctx.role === 'resident') {
+  if (!isStaff) {
     if (action !== 'cancel') throw new HttpError('Forbidden', 403);
     filter.hostId = ctx.userId;
   }
 
   const pass = await VisitorPass.findOneAndUpdate(
     filter,
-    { ...transitions[action].set(), ...(ctx.role !== 'resident' ? { handledBy: ctx.userId } : {}) },
+    { ...transitions[action].set(), ...(isStaff ? { handledBy: ctx.userId } : {}) },
     { returnDocument: 'after' }
   );
   if (!pass) throw new HttpError('This pass cannot be changed from its current status', 409);

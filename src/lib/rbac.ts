@@ -2,92 +2,21 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from './auth';
 
-export type Role = 'admin' | 'guard' | 'resident';
-
-export type Permission =
-  | 'parking:create'
-  | 'parking:read'
-  | 'parking:read_own'
-  | 'parking:update'
-  | 'parking:delete'
-  | 'parking:exit'
-  | 'users:create'
-  | 'users:read'
-  | 'users:update'
-  | 'users:delete'
-  | 'vehicles:create'
-  | 'vehicles:create_own'
-  | 'vehicles:read'
-  | 'vehicles:read_own'
-  | 'vehicles:update'
-  | 'vehicles:delete'
-  | 'buildings:create'
-  | 'buildings:read'
-  | 'buildings:update'
-  | 'buildings:delete'
-  | 'parking_slots:create'
-  | 'parking_slots:read'
-  | 'parking_slots:update'
-  | 'parking_slots:delete'
-  | 'reports:export'
-  | 'reports:export_own';
-
-// Permission matrix
-const rolePermissions: Record<Role, Permission[]> = {
-  admin: [
-    'parking:create',
-    'parking:read',
-    'parking:read_own',
-    'parking:update',
-    'parking:delete',
-    'parking:exit',
-    'users:create',
-    'users:read',
-    'users:update',
-    'users:delete',
-    'vehicles:create',
-    'vehicles:read',
-    'vehicles:update',
-    'vehicles:delete',
-    'buildings:create',
-    'buildings:read',
-    'buildings:update',
-    'buildings:delete',
-    'parking_slots:create',
-    'parking_slots:read',
-    'parking_slots:update',
-    'parking_slots:delete',
-    'reports:export',
-    'reports:export_own',
-  ],
-  guard: [
-    'parking:create',
-    'parking:read',
-    'parking:update',
-    'parking:exit',
-    'vehicles:create',
-    'vehicles:read',
-    'vehicles:update',
-  ],
-  resident: [
-    'parking:read_own',
-    'vehicles:create_own',
-    'vehicles:read_own',
-    'reports:export_own',
-  ],
-};
-
-export function hasPermission(role: Role, permission: Permission): boolean {
-  return rolePermissions[role]?.includes(permission) ?? false;
-}
-
-export function hasAnyPermission(role: Role, permissions: Permission[]): boolean {
-  return permissions.some((permission) => hasPermission(role, permission));
-}
-
-export function hasAllPermissions(role: Role, permissions: Permission[]): boolean {
-  return permissions.every((permission) => hasPermission(role, permission));
-}
+export {
+  ROLES,
+  STAFF_ROLES,
+  PRIVILEGED_ROLES,
+  ROLE_LABELS,
+  hasPermission,
+  hasAnyPermission,
+  hasAllPermissions,
+  canManageRole,
+  assignableRoles,
+  permissionsFor,
+  isRole,
+} from './permissions';
+export type { Role, Permission } from './permissions';
+import { hasPermission, hasAnyPermission, type Permission, type Role } from './permissions';
 
 // Route protection helper
 export async function requireAuth() {
@@ -128,7 +57,7 @@ export async function requireRole(allowedRoles: Role[]) {
   return { error: null, session };
 }
 
-export async function requirePermission(permission: Permission) {
+export async function requirePermission(permission: Permission | Permission[]) {
   const { error, session } = await requireAuth();
 
   if (error) {
@@ -136,8 +65,11 @@ export async function requirePermission(permission: Permission) {
   }
 
   const userRole = session!.user.role as Role;
+  const allowed = Array.isArray(permission)
+    ? hasAnyPermission(userRole, permission)
+    : hasPermission(userRole, permission);
 
-  if (!hasPermission(userRole, permission)) {
+  if (!allowed) {
     return {
       error: NextResponse.json(
         { success: false, error: 'Forbidden' },
@@ -158,9 +90,6 @@ export function canAccessResource(
   readAllPermission?: Permission,
   readOwnPermission?: Permission
 ): boolean {
-  // Admin can access everything
-  if (userRole === 'admin') return true;
-
   // Check read all permission
   if (readAllPermission && hasPermission(userRole, readAllPermission)) {
     return true;

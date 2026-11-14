@@ -1,5 +1,6 @@
 'use client';
 
+import { ROLE_LABELS, isRole } from '@/lib/permissions';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { DataState, StatusBadge } from '@/components/ds';
@@ -94,7 +95,7 @@ export function RequestDialog({ requestId, admin, onClose, onChanged }: { reques
                 {request.updates.map((u, i) => (
                   <li key={i}>
                     <p className="text-xs text-muted-foreground">
-                      {formatDateTime(u.at)}, {u.byName} ({u.byRole === 'admin' ? 'admin office' : u.byRole})
+                      {formatDateTime(u.at)}, {u.byName} ({isRole(u.byRole) ? ROLE_LABELS[u.byRole].toLowerCase() : u.byRole})
                     </p>
                     {u.status && <p className="font-medium">Marked {label(u.status).toLowerCase()}</p>}
                     {u.note && <p className="whitespace-pre-wrap">{u.note}</p>}

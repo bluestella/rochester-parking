@@ -7,6 +7,7 @@ import { InvoiceDetail } from '@/components/billing/InvoiceDetail';
 import type { BillingSettings, Invoice, Payment } from '@/components/billing/types';
 import { DataState, EmptyState, FormDialog, Meter, Page, PageHeader, SectionTitle, Stat, StatStrip, StatusBadge, type FieldDef, type FormValues } from '@/components/ds';
 import { Button } from '@/components/ui/button';
+import { useCan } from '@/hooks';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -49,6 +50,8 @@ export default function BillingPage() {
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
+  const { can } = useCan();
+  const manage = can('billing:manage');
 
   const summary = useApi<Summary>(`/api/billing/summary?period=${period}`);
   const invoices = useApi<{ invoices: Invoice[] }>(
@@ -119,14 +122,19 @@ export default function BillingPage() {
 
   return (
     <Page>
-      <PageHeader title="Dues and billing" description="Issue monthly statements, record payments, and follow up on what is overdue.">
+      <PageHeader
+        title="Dues and billing"
+        description={manage ? 'Issue monthly statements, record payments, and follow up on what is overdue.' : 'Statements, payments and receivables. View only: the accounting team issues statements and records payments.'}
+      >
         <div>
           <Label htmlFor="period" className="sr-only">Billing month</Label>
           <Input id="period" type="month" value={period} onChange={(e) => e.target.value && setPeriod(e.target.value)} className="w-40" />
         </div>
-        <Button onClick={issue} disabled={busy === 'run'}>
-          <Send aria-hidden /> Issue statements
-        </Button>
+        {manage && (
+          <Button onClick={issue} disabled={busy === 'run'}>
+            <Send aria-hidden /> Issue statements
+          </Button>
+        )}
       </PageHeader>
 
       {s && (
@@ -170,15 +178,17 @@ export default function BillingPage() {
               <option value="paid">Paid</option>
               <option value="void">Void</option>
             </NativeSelect>
-            <Button variant="outline" onClick={() => setCreating(true)}><FilePlus2 aria-hidden /> One-off statement</Button>
-            <Button variant="outline" asChild>
-              <a href={`/api/billing/export?period=${period}`}><Download aria-hidden /> Export CSV</a>
-            </Button>
+            {manage && <Button variant="outline" onClick={() => setCreating(true)}><FilePlus2 aria-hidden /> One-off statement</Button>}
+            {can('billing:export') && (
+              <Button variant="outline" asChild>
+                <a href={`/api/billing/export?period=${period}`}><Download aria-hidden /> Export CSV</a>
+              </Button>
+            )}
           </div>
 
           <DataState loading={invoices.loading && !invoices.data} error={invoices.error} onRetry={invoices.reload} />
           {invoices.data && list.length === 0 && (
-            <EmptyState icon={ReceiptText} title={`No statements for ${formatPeriod(period)}`} action={!status && !query ? <Button onClick={issue}>Issue statements</Button> : undefined}>
+            <EmptyState icon={ReceiptText} title={`No statements for ${formatPeriod(period)}`} action={manage && !status && !query ? <Button onClick={issue}>Issue statements</Button> : undefined}>
               {status || query ? 'Nothing matches the current filter.' : 'Issue statements to bill every active unit its dues and parking fees for the month.'}
             </EmptyState>
           )}
@@ -211,7 +221,7 @@ export default function BillingPage() {
                       <TableCell><StatusBadge status={inv.displayStatus} /></TableCell>
                       <TableCell className="hidden sm:table-cell">{formatDate(inv.dueDate)}</TableCell>
                       <TableCell className="text-right">
-                        {inv.status === 'open' && (
+                        {manage && inv.status === 'open' && (
                           <Button size="sm" variant="outline" onClick={() => setPaying(inv)}>Record payment</Button>
                         )}
                       </TableCell>
@@ -241,10 +251,10 @@ export default function BillingPage() {
                         {p.invoiceId?.buildingName} {p.invoiceId?.unitNumber}, statement {p.invoiceId?.number}. Reported by {p.submittedBy?.name} on {formatDate(p.paidAt)}.
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    {manage && <div className="flex gap-2">
                       <Button size="sm" onClick={() => review(p, 'confirm')} disabled={busy === p._id}><Check aria-hidden /> Confirm</Button>
                       <Button size="sm" variant="outline" onClick={() => review(p, 'reject')} disabled={busy === p._id}><X aria-hidden /> Reject</Button>
-                    </div>
+                    </div>}
                   </li>
                 ))}
               </ul>
@@ -287,7 +297,7 @@ export default function BillingPage() {
           {s && (
             <div className="grid gap-8 lg:grid-cols-2">
               <section>
-                <SectionTitle action={<Button size="sm" variant="outline" onClick={penalties} disabled={busy === 'penalties'}><Percent aria-hidden /> Add late charges</Button>}>
+                <SectionTitle action={manage && <Button size="sm" variant="outline" onClick={penalties} disabled={busy === 'penalties'}><Percent aria-hidden /> Add late charges</Button>}>
                   Unpaid by age
                 </SectionTitle>
                 <ul className="space-y-3 rounded-lg border bg-card p-4">
@@ -325,7 +335,7 @@ export default function BillingPage() {
         </TabsContent>
 
         <TabsContent value="rates">
-          <RatesForm />
+          <RatesForm editable={can('billing:settings')} />
         </TabsContent>
       </Tabs>
 
@@ -333,7 +343,7 @@ export default function BillingPage() {
         invoiceId={viewing}
         onClose={() => setViewing(null)}
         footer={(inv) =>
-          inv.status === 'open' && (
+          manage && inv.status === 'open' && (
             <div className="flex flex-wrap gap-2 border-t pt-4">
               <Button size="sm" onClick={() => { setViewing(null); setPaying(inv); }}>Record payment</Button>
               <Button size="sm" variant="outline" onClick={() => { setViewing(null); setCharging(inv); }}>Add charge</Button>
@@ -399,7 +409,7 @@ export default function BillingPage() {
   );
 }
 
-function RatesForm() {
+function RatesForm({ editable }: { editable: boolean }) {
   const { data, loading, error, reload } = useApi<BillingSettings>('/api/billing/settings');
   const [saving, setSaving] = useState(false);
 
@@ -428,7 +438,8 @@ function RatesForm() {
   );
 
   return (
-    <form onSubmit={submit} className="max-w-2xl space-y-5 rounded-lg border bg-card p-5">
+    <form onSubmit={submit} className="max-w-2xl rounded-lg border bg-card p-5">
+      <fieldset disabled={!editable} className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">
         {field('duesRatePerSqm', 'Association dues per sqm', 'Charged monthly on each unit’s floor area.')}
         {field('parkingFee', 'Parking fee per assigned slot', 'A slot can override this with its own fee.')}
@@ -440,7 +451,12 @@ function RatesForm() {
         <Textarea id="paymentInstructions" name="paymentInstructions" rows={4} defaultValue={data.paymentInstructions} placeholder="Bank account, e-wallet number, cashier hours" />
         <p className="text-xs text-muted-foreground">Residents see this next to their balance.</p>
       </div>
-      <Button type="submit" disabled={saving}>Save rates</Button>
+      {editable ? (
+        <Button type="submit" disabled={saving}>Save rates</Button>
+      ) : (
+        <p className="text-sm text-muted-foreground">Rates are set by the accounting team.</p>
+      )}
+      </fieldset>
     </form>
   );
 }

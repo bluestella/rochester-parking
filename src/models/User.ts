@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { ROLES, type Role } from '@/lib/permissions';
 
-export type UserRole = 'admin' | 'guard' | 'resident';
+export type UserRole = Role;
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
@@ -38,7 +39,7 @@ const UserSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['admin', 'guard', 'resident'],
+      enum: [...ROLES],
       required: [true, 'Role is required'],
       default: 'resident',
     },

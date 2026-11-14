@@ -1,5 +1,6 @@
 'use client';
 
+import { ROLE_LABELS, isRole } from '@/lib/permissions';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -71,7 +72,7 @@ function AccountPanel() {
   const { data: session } = useSession();
   if (!session) return null;
   const { user } = session;
-  const where = user.unitNumber ? `${user.buildingName ?? ''} ${user.unitNumber}`.trim() : user.role;
+  const where = user.unitNumber ? `${user.buildingName ?? ''} ${user.unitNumber}`.trim() : isRole(user.role) ? ROLE_LABELS[user.role] : user.role;
   const row =
     'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-sidebar-foreground/85 outline-none hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring';
 

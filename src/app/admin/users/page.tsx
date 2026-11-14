@@ -1,5 +1,6 @@
 'use client';
 
+import type { Role } from '@/lib/permissions';
 import { useState, useEffect, useCallback } from 'react';
 import { UserTable } from '@/components/users/UserTable';
 import { RefreshCw } from 'lucide-react';
@@ -9,7 +10,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'admin' | 'guard' | 'resident';
+  role: Role;
   unitNumber?: string;
   buildingName?: string;
   isActive: boolean;

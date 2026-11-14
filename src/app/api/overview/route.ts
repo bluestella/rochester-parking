@@ -18,13 +18,13 @@ import { currentPeriod, round2 } from '@/lib/format';
 const DAY = 24 * 60 * 60 * 1000;
 
 // GET /api/overview — the numbers behind the home page for each role
-export const GET = route({}, async ({ role, session, userId }) => {
+export const GET = route({}, async ({ role, session, userId, can }) => {
   const now = new Date();
   const todayUtc = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
   const today = { $gte: todayUtc, $lt: new Date(todayUtc.getTime() + DAY) };
   const live = { $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] };
 
-  if (role === 'resident') {
+  if (!can('dashboard:view')) {
     const units = await Unit.find(await unitFilterFor(session)).lean();
     const unitIds = units.map((u) => u._id);
     const [openInvoices, bookings, requests, visitors, announcements, parked] = await Promise.all([
@@ -65,6 +65,18 @@ export const GET = route({}, async ({ role, session, userId }) => {
     });
   }
 
+  // Office roles: each block is only computed for people allowed to see it.
+  const show = {
+    parking: can('parking:read') || can('parking_slots:read'),
+    billing: can('billing:read'),
+    requests: can('requests:read_all'),
+    bookings: can('bookings:manage'),
+    visitors: can('visitors:manage'),
+    equipment: can('equipment:read'),
+    activity: can('audit:read'),
+  };
+  const none = <T,>(value: T) => Promise.resolve(value);
+
   const period = currentPeriod();
   const [
     slots,
@@ -79,27 +91,33 @@ export const GET = route({}, async ({ role, session, userId }) => {
     activity,
     units,
   ] = await Promise.all([
-    ParkingSlot.countDocuments({}),
-    ParkingSlot.countDocuments({ isOccupied: true }),
-    Invoice.find({ period, status: { $ne: 'void' } }).select('total amountPaid').lean(),
-    Invoice.find({ status: 'open' }).select('total amountPaid dueDate').lean(),
-    Payment.countDocuments({ status: 'pending' }),
-    ServiceRequest.find({ status: { $in: ['open', 'in_progress', 'on_hold'] } })
-      .sort({ createdAt: -1 })
-      .select('ticketNumber title priority status unitNumber buildingName createdAt')
-      .lean(),
-    Booking.countDocuments({ status: 'pending' }),
-    VisitorPass.countDocuments({ expectedDate: today, status: 'expected' }),
-    Equipment.find({
-      preventativeMaintenanceSchedule: { $lte: new Date(now.getTime() + 14 * DAY) },
-    })
-      .sort({ preventativeMaintenanceSchedule: 1 })
-      .limit(5)
-      .select('equipmentId make equipmentModel preventativeMaintenanceSchedule')
-      .lean(),
-    role === 'admin'
+    show.parking ? ParkingSlot.countDocuments({}) : none(0),
+    show.parking ? ParkingSlot.countDocuments({ isOccupied: true }) : none(0),
+    show.billing
+      ? Invoice.find({ period, status: { $ne: 'void' } }).select('total amountPaid').lean()
+      : none([]),
+    show.billing ? Invoice.find({ status: 'open' }).select('total amountPaid dueDate').lean() : none([]),
+    show.billing ? Payment.countDocuments({ status: 'pending' }) : none(0),
+    show.requests
+      ? ServiceRequest.find({ status: { $in: ['open', 'in_progress', 'on_hold'] } })
+          .sort({ createdAt: -1 })
+          .select('ticketNumber title priority status unitNumber buildingName createdAt')
+          .lean()
+      : none([]),
+    show.bookings ? Booking.countDocuments({ status: 'pending' }) : none(0),
+    show.visitors ? VisitorPass.countDocuments({ expectedDate: today, status: 'expected' }) : none(0),
+    show.equipment
+      ? Equipment.find({
+          preventativeMaintenanceSchedule: { $lte: new Date(now.getTime() + 14 * DAY) },
+        })
+          .sort({ preventativeMaintenanceSchedule: 1 })
+          .limit(5)
+          .select('equipmentId make equipmentModel preventativeMaintenanceSchedule')
+          .lean()
+      : none([]),
+    show.activity
       ? AuditLog.find({}).sort({ timestamp: -1 }).limit(8).populate('userId', 'name').lean()
-      : [],
+      : none([]),
     Unit.countDocuments({ isActive: true }),
   ]);
 
@@ -111,20 +129,27 @@ export const GET = route({}, async ({ role, session, userId }) => {
     role,
     period,
     units,
-    parking: { slots, occupied, free: slots - occupied },
-    billing:
-      role === 'admin'
-        ? {
-            billed,
-            collected,
-            collectionRate: billed > 0 ? Math.round((collected / billed) * 100) : 0,
-            outstanding: round2(openInvoices.reduce((s, i) => s + i.total - i.amountPaid, 0)),
-            overdueCount: overdue.length,
-            overdueAmount: round2(overdue.reduce((s, i) => s + i.total - i.amountPaid, 0)),
-            pendingPayments,
-          }
-        : null,
-    requests: { active: requests.length, urgent: requests.filter((r) => ['urgent', 'high'].includes(r.priority)).length, latest: requests.slice(0, 5) },
+    parking: show.parking ? { slots, occupied, free: slots - occupied } : null,
+    billing: show.billing
+      ? {
+          billed,
+          collected,
+          collectionRate: billed > 0 ? Math.round((collected / billed) * 100) : 0,
+          outstanding: round2(openInvoices.reduce((s, i) => s + i.total - i.amountPaid, 0)),
+          overdueCount: overdue.length,
+          overdueAmount: round2(overdue.reduce((s, i) => s + i.total - i.amountPaid, 0)),
+          pendingPayments,
+          // Only people who can confirm payments get them in their work queue.
+          canConfirm: can('billing:manage'),
+        }
+      : null,
+    requests: show.requests
+      ? {
+          active: requests.length,
+          urgent: requests.filter((r) => ['urgent', 'high'].includes(r.priority)).length,
+          latest: requests.slice(0, 5),
+        }
+      : null,
     pendingBookings,
     visitorsToday,
     equipmentDue,

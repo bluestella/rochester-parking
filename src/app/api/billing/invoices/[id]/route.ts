@@ -5,10 +5,10 @@ import { invoiceView } from '@/lib/billing';
 import { invoiceItemSchema } from '@/lib/validations';
 
 // GET /api/billing/invoices/[id] — statement with its payment history
-export const GET = route({ roles: ['admin', 'resident'] }, async ({ params, session, role }) => {
+export const GET = route({ permission: ['billing:read', 'billing:read_own'] }, async ({ params, session, can }) => {
   const invoice = await Invoice.findById(params.id).lean();
   if (!invoice) throw new HttpError('Statement not found', 404);
-  if (role === 'resident') {
+  if (!can('billing:read')) {
     const mine = await Unit.exists({ ...(await unitFilterFor(session)), _id: invoice.unitId });
     if (!mine) throw new HttpError('Statement not found', 404);
   }
@@ -25,7 +25,7 @@ const actionSchema = z.discriminatedUnion('action', [
 ]);
 
 // PATCH /api/billing/invoices/[id] — void, or add a charge to an open statement
-export const PATCH = route({ roles: ['admin'] }, async (ctx) => {
+export const PATCH = route({ permission: 'billing:manage' }, async (ctx) => {
   const body = parse(actionSchema, await ctx.request.json());
 
   if (body.action === 'void') {

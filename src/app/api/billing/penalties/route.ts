@@ -3,7 +3,7 @@ import { audit, ok, route } from '@/lib/api';
 import { currentPeriod, formatPeriod, round2 } from '@/lib/format';
 
 // POST /api/billing/penalties — add this month's late charge to overdue statements
-export const POST = route({ roles: ['admin'] }, async (ctx) => {
+export const POST = route({ permission: 'billing:manage' }, async (ctx) => {
   const settings = await getBillingSettings();
   const rate = settings!.penaltyRatePercent;
   const month = currentPeriod();

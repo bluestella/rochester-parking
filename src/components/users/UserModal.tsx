@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useBuildings } from '@/hooks';
+import { useBuildings, useCan } from '@/hooks';
+import { ROLE_DESCRIPTIONS, ROLE_LABELS, assignableRoles, type Role } from '@/lib/permissions';
 import {
   Dialog,
   DialogContent,
@@ -27,7 +28,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'admin' | 'guard' | 'resident';
+  role: Role;
   unitNumber?: string;
   buildingName?: string;
   isActive: boolean;
@@ -47,12 +48,14 @@ export function UserModal({
   onSuccess,
 }: UserModalProps) {
   const { buildings, loading: loadingBuildings } = useBuildings();
+  const { role: actorRole } = useCan();
+  const roleOptions = assignableRoles(actorRole);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'resident' as 'admin' | 'guard' | 'resident',
+    role: 'resident' as Role,
     unitNumber: '',
     buildingName: '',
   });
@@ -180,7 +183,7 @@ export function UserModal({
               <Label htmlFor="role">Role *</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value: 'admin' | 'guard' | 'resident') =>
+                onValueChange={(value: Role) =>
                   setFormData({ ...formData, role: value })
                 }
               >
@@ -188,11 +191,14 @@ export function UserModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="guard">Guard</SelectItem>
-                  <SelectItem value="resident">Resident</SelectItem>
+                  {roleOptions.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {ROLE_LABELS[r]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">{ROLE_DESCRIPTIONS[formData.role]}</p>
             </div>
 
             {formData.role === 'resident' && (

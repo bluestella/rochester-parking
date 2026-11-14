@@ -3,8 +3,8 @@ import { audit, ok, parse, route } from '@/lib/api';
 import { announcementSchema } from '@/lib/validations';
 
 // GET /api/announcements — current notices, pinned first. Admins can pass ?all=1 for expired ones too.
-export const GET = route({}, async ({ request, role, session }) => {
-  const all = role === 'admin' && request.nextUrl.searchParams.get('all') === '1';
+export const GET = route({}, async ({ request, role, session, can }) => {
+  const all = can('announcements:manage') && request.nextUrl.searchParams.get('all') === '1';
   const now = new Date();
   const and: Record<string, unknown>[] = [];
   if (!all) and.push({ $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] });
@@ -20,7 +20,7 @@ export const GET = route({}, async ({ request, role, session }) => {
 });
 
 // POST /api/announcements
-export const POST = route({ roles: ['admin'] }, async (ctx) => {
+export const POST = route({ permission: 'announcements:manage' }, async (ctx) => {
   const data = parse(announcementSchema, await ctx.request.json());
   const announcement = await Announcement.create({
     ...data,

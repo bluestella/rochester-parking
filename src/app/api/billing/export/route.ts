@@ -6,7 +6,7 @@ import { currentPeriod, formatDate, round2 } from '@/lib/format';
 import { NextResponse } from 'next/server';
 
 // GET /api/billing/export?period=YYYY-MM — statements for the period as CSV
-export const GET = route({ roles: ['admin'] }, async ({ request }) => {
+export const GET = route({ permission: 'billing:export' }, async ({ request }) => {
   const period = request.nextUrl.searchParams.get('period') || currentPeriod();
   const invoices = await Invoice.find({ period }).sort({ buildingName: 1, unitNumber: 1 }).lean();
   const csv = toCsv(
