@@ -118,7 +118,7 @@ export function ParkingTable({
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="parked">Parked</SelectItem>
             <SelectItem value="exited">Exited</SelectItem>
           </SelectContent>
@@ -191,7 +191,7 @@ export function ParkingTable({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleExit(record)}
-                          className="text-orange-600 hover:text-orange-700"
+                          className="text-warning hover:text-warning"
                         >
                           <LogOut className="h-4 w-4" />
                           <span className="sr-only sm:not-sr-only sm:ml-1">

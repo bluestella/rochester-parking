@@ -62,3 +62,33 @@ Security features to protect data and operations.
     -   Average duration of stay.
     -   Most frequently used parking slots.
 -   **Exportable Data:** Admins can export system-wide parking logs for offline analysis or reporting.
+
+
+## Condominium management (added)
+
+### Units
+- Register each unit with its building, floor area, type, owner and occupancy.
+- A resident is linked to a unit as its owner, or by the building and unit number on their account.
+
+### Dues and billing (`/admin/billing`, `/resident/dues`)
+- **Rates**: dues per sqm, parking fee per reserved slot, due day, late-charge percentage, payment instructions.
+- **Issue statements**: one statement of account per active unit per month (dues = floor area × rate, plus each reserved parking slot). Running it twice never double-bills.
+- **One-off statements** and **extra charges** (utilities, repairs).
+- **Payments**: the office records a payment and gets an official receipt number; residents report a transfer, which waits for the office to confirm it.
+- **Late charges**: applied to overdue balances at most once per calendar month.
+- **Receivables**: collection rate, ageing buckets, largest overdue balances, CSV export.
+
+### Parking additions
+- Slots have a use (visitor, reserved, PWD, motorcycle); reserved slots belong to a unit and are billed monthly.
+- **Deck map** (`/parking/map`): every bay drawn live; select a free bay to record an entry.
+- **Visitors** (`/parking/visitors`, `/resident/visitors`): residents pre-register guests and get a pass code; guards check visitors in and out and log walk-ins.
+
+### Facilities
+- **Amenities and bookings**: opening hours, capacity, hourly fee, optional approval. Clash detection for exclusive spaces. An approved paid booking adds the fee to the unit's account.
+- **Service requests**: residents and staff file tickets; the office assigns, prioritises, replies and resolves, with a full history on each ticket.
+- **Equipment**: maintenance due within two weeks surfaces on the overview.
+
+### Community and admin
+- **Announcements**: pinned, per-building, with expiry.
+- **Overview**: a work queue of what needs a person today.
+- **Activity log** (`/admin/logs`): who changed what.

@@ -9,3 +9,5 @@ This directory contains project documentation for both humans and AI assistants.
 - AI quick reference: [ai-context.md](file:///Users/bluestella/repositories/rochester-parking/.docs/ai-context.md)
 
 Project README: [README.md](file:///Users/bluestella/repositories/rochester-parking/README.md)
+
+- [Design system](design-system.md): tokens, components and rules for the UI

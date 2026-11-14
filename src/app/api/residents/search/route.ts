@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
+import { like } from '@/lib/api';
 import { User, Vehicle } from '@/models';
 import { requirePermission } from '@/lib/rbac';
 
@@ -27,9 +28,9 @@ export async function GET(request: NextRequest) {
       role: 'resident',
       isActive: true,
       $or: [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { unitNumber: { $regex: search, $options: 'i' } },
+        { name: like(search) },
+        { email: like(search) },
+        { unitNumber: like(search) },
       ],
     })
       .select('_id name email unitNumber buildingName')

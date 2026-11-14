@@ -58,6 +58,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // Calculate duration in minutes
     const entryTime = new Date(record.entryTimestamp).getTime();
     const exitTime = exitTimestamp.getTime();
+    if (exitTime < entryTime) {
+      return NextResponse.json(
+        { success: false, error: 'Exit time cannot be before the entry time' },
+        { status: 400 }
+      );
+    }
     const durationMinutes = Math.round((exitTime - entryTime) / (1000 * 60));
 
     // Update record
@@ -69,7 +75,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         duration: durationMinutes,
         updatedBy: session!.user.id,
       },
-      { new: true }
+      { returnDocument: 'after' }
     ).populate('updatedBy', 'name');
 
     // Free up parking slot

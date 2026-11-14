@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
+import { like } from '@/lib/api';
 import { ParkingRecord, ParkingSlot, Vehicle, AuditLog } from '@/models';
 import { requirePermission } from '@/lib/rbac';
 import {
@@ -49,15 +50,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (plateNumber) {
-      query.plateNumber = { $regex: plateNumber, $options: 'i' };
+      query.plateNumber = like(plateNumber);
     }
 
     if (search) {
       query.$or = [
-        { plateNumber: { $regex: search, $options: 'i' } },
-        { buildingName: { $regex: search, $options: 'i' } },
-        { unitNumber: { $regex: search, $options: 'i' } },
-        { parkingSlot: { $regex: search, $options: 'i' } },
+        { plateNumber: like(search) },
+        { buildingName: like(search) },
+        { unitNumber: like(search) },
+        { parkingSlot: like(search) },
       ];
     }
 
@@ -139,9 +140,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if parking slot is occupied
-    const slot = await ParkingSlot.findOne({ slotCode: data.parkingSlot });
-    if (slot?.isOccupied) {
+    // Claim the slot atomically so two guards cannot assign it at the same moment
+    const slotExists = await ParkingSlot.exists({ slotCode: data.parkingSlot });
+    const slot = await ParkingSlot.findOneAndUpdate(
+      { slotCode: data.parkingSlot, isOccupied: false },
+      { isOccupied: true, currentVehicle: data.plateNumber },
+      { returnDocument: 'after' }
+    );
+    if (slotExists && !slot) {
       return NextResponse.json(
         { success: false, error: 'Parking slot is already occupied' },
         { status: 400 }
@@ -151,22 +157,28 @@ export async function POST(request: NextRequest) {
     // Try to find the vehicle to link
     const vehicle = await Vehicle.findOne({ plateNumber: data.plateNumber, isActive: true });
 
-    // Create parking record
-    const record = await ParkingRecord.create({
-      ...data,
-      entryTimestamp: data.entryTimestamp ? new Date(data.entryTimestamp) : new Date(),
-      status: 'parked',
-      vehicleId: vehicle?._id,
-      residentId: vehicle?.ownerId,
-      createdBy: session!.user.id,
-    });
-
-    // Update parking slot
-    if (slot) {
-      await ParkingSlot.findByIdAndUpdate(slot._id, {
-        isOccupied: true,
-        currentVehicle: data.plateNumber,
+    let record;
+    try {
+      record = await ParkingRecord.create({
+        ...data,
+        entryTimestamp: data.entryTimestamp ? new Date(data.entryTimestamp) : new Date(),
+        status: 'parked',
+        vehicleId: vehicle?._id,
+        residentId: vehicle?.ownerId,
+        createdBy: session!.user.id,
       });
+    } catch (createErr) {
+      // Release the slot if the record could not be written
+      if (slot) {
+        await ParkingSlot.findByIdAndUpdate(slot._id, { isOccupied: false, currentVehicle: null });
+      }
+      if ((createErr as { code?: number }).code === 11000) {
+        return NextResponse.json(
+          { success: false, error: 'Vehicle is already parked' },
+          { status: 400 }
+        );
+      }
+      throw createErr;
     }
 
     // Create audit log

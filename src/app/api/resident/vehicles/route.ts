@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
     // Create vehicle
     const vehicle = await Vehicle.create({
       ...data,
+      buildingName: session!.user.buildingName,
+      unitNumber: session!.user.unitNumber,
       ownerId: session!.user.id,
       createdBy: session!.user.id,
     });

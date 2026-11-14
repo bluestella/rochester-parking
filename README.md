@@ -1,15 +1,16 @@
-# Condo ParkTrack
+# Rochester
 
-A Condominium Parking Management System built with Next.js 15, MongoDB, and NextAuth.js.
+Condominium management built with Next.js 15, MongoDB and NextAuth.js: parking, monthly dues, facilities and community, for the admin office, the guards and every resident.
 
 ## Features
 
-- **Role-based Access Control** - Admin, Guard, and Resident roles
-- **Parking Management** - Record vehicle entries and exits
-- **User Management** - Admin can create and manage users
-- **Vehicle Registration** - Guards/Admins and Residents can register vehicles
-- **Parking History** - Residents can view their parking history and export to CSV
-- **Responsive Design** - Mobile-friendly interface
+- **Parking**: gate log, live deck map, reserved/visitor/PWD slots, vehicle registry, visitor passes
+- **Dues and billing**: monthly statements per unit, payments with receipts, resident-reported payments, late charges, receivables ageing, CSV export
+- **Facilities**: amenity bookings with approval and fees, service requests with history, equipment maintenance
+- **Community and admin**: units and owners, announcements, role-based access (admin, guard, resident), activity log
+- **Design system**: tokens, light and dark themes, shared components. See `docs/design-system.md` and `/admin/design-system`
+
+`npm run seed` loads demo data. It **wipes the database it points at** and refuses to run with `NODE_ENV=production`.
 
 ## Tech Stack
 

@@ -109,7 +109,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const updatedUser = await User.findByIdAndUpdate(id, updateData, {
-      new: true,
+      returnDocument: 'after',
     }).lean();
 
     // Create audit log

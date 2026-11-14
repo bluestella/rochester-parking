@@ -51,6 +51,17 @@ export function ParkingForm() {
 
   useEffect(() => {
     fetchSlots();
+    // Arriving from the deck map: start in manual mode with the chosen bay filled in.
+    const params = new URLSearchParams(window.location.search);
+    const slot = params.get('slot');
+    if (slot) {
+      setEntryMode('manual');
+      setFormData((prev) => ({
+        ...prev,
+        buildingName: params.get('building') ?? '',
+        parkingSlot: slot,
+      }));
+    }
   }, []);
 
   const fetchSlots = async () => {

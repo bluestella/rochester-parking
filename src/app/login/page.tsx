@@ -6,9 +6,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PlateTag } from '@/components/ds/plate-tag';
+import { brand } from '@/lib/brand';
 import { toast } from 'sonner';
-import { Loader2, Car } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
@@ -36,7 +37,7 @@ function LoginForm() {
         return;
       }
 
-      toast.success('Welcome back!');
+      toast.success('Signed in');
       router.push(callbackUrl);
       router.refresh();
     } catch {
@@ -80,7 +81,7 @@ function LoginForm() {
 
       <Button type="submit" className="w-full" disabled={loading}>
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Sign In
+        Sign in
       </Button>
     </form>
   );
@@ -88,36 +89,45 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="bg-primary/10 p-3 rounded-full">
-              <Car className="h-8 w-8 text-primary" />
+    <div className="grid min-h-screen lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      {/* The deck: brand panel drawn as a row of painted bays */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-sidebar p-10 text-sidebar-foreground lg:flex">
+        <p className="type-title text-2xl tracking-wide">{brand.name}</p>
+        <div>
+          <h1 className="type-display max-w-[14ch] text-5xl leading-[1.05]">One desk for the whole building.</h1>
+          <p className="mt-4 max-w-[38ch] text-sidebar-muted">
+            Parking, monthly dues, amenities, repairs and visitors, for the admin office, the guards and every resident.
+          </p>
+        </div>
+        <div aria-hidden className="-mx-10 -mb-10 flex h-36 items-end gap-0 border-t-[3px] border-line/80 px-10">
+          {['P1-01', 'P1-02', 'P1-03', 'P1-04', 'P1-05', 'P1-06'].map((code, i) => (
+            <div key={code} className="flex h-28 flex-1 flex-col items-center justify-between border-l-[3px] border-line/80 pb-3 pt-4 last:border-r-[3px]">
+              {i === 1 ? <PlateTag plate="NGA 4821" size="sm" /> : i === 4 ? <PlateTag plate="ABC 1234" size="sm" /> : <span />}
+              <span className="type-stencil text-xs text-sidebar-muted">{code}</span>
             </div>
-          </div>
-          <CardTitle className="text-2xl">Condo ParkTrack</CardTitle>
-          <CardDescription>
-            Sign in to access the parking management system
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Suspense fallback={<div className="h-48 flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>}>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-sm">
+          <p className="type-title mb-8 text-2xl tracking-wide text-primary lg:hidden">{brand.name}</p>
+          <h2 className="type-display">Sign in</h2>
+          <p className="mb-6 mt-1 text-muted-foreground">Use the account the admin office gave you.</p>
+          <Suspense fallback={<div className="flex h-48 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>}>
             <LoginForm />
           </Suspense>
 
-          <div className="mt-6 pt-6 border-t">
-            <p className="text-sm text-muted-foreground text-center">
-              Demo credentials:
-            </p>
-            <div className="mt-2 space-y-1 text-xs text-muted-foreground text-center">
-              <p>Admin: admin@parktrack.com / admin123</p>
-              <p>Guard: guard@parktrack.com / guard123</p>
-              <p>Resident: resident@parktrack.com / resident123</p>
+          {process.env.NODE_ENV !== 'production' && (
+            <div className="mt-8 rounded-md border border-dashed p-3 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground">Demo accounts (development only)</p>
+              <p>admin@parktrack.com / admin123</p>
+              <p>guard@parktrack.com / guard123</p>
+              <p>resident@parktrack.com / resident123</p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

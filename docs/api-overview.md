@@ -33,3 +33,25 @@ API routes live under `src/app/api/*`.
 
 ## Access Control
 - See RBAC rules in [rbac.md](file:///Users/bluestella/repositories/rochester-parking/.docs/rbac.md) and middleware enforcement in [middleware.ts](file:///Users/bluestella/repositories/rochester-parking/src/middleware.ts).
+
+
+## Condominium management endpoints
+
+New handlers are wrapped with `route()` from `src/lib/api.ts`, which handles authentication, role checks, the database connection and error responses.
+
+| Endpoint | Methods | Who |
+| --- | --- | --- |
+| `/api/overview` | GET | all (shape depends on role) |
+| `/api/units`, `/api/units/[id]` | GET, POST, PUT, DELETE | read: all (residents: own); write: admin |
+| `/api/billing/settings` | GET, PUT | read: all; write: admin |
+| `/api/billing/run` | POST `{ period }` | admin |
+| `/api/billing/invoices`, `/[id]` | GET, POST, PATCH (`void`, `add_charge`) | admin; residents read own |
+| `/api/billing/payments`, `/[id]` | GET, POST, PATCH (`confirm`, `reject`) | admin; residents report and read own |
+| `/api/billing/penalties` | POST | admin |
+| `/api/billing/summary`, `/api/billing/export` | GET | admin |
+| `/api/amenities`, `/[id]` | GET, POST, PUT, DELETE | read: all; write: admin |
+| `/api/bookings`, `/[id]` | GET, POST, PATCH (`approve`, `reject`, `cancel`) | admin, resident |
+| `/api/requests`, `/[id]` | GET, POST, PATCH | all (non-admins: own tickets) |
+| `/api/announcements`, `/[id]` | GET, POST, PUT, DELETE | read: all; write: admin |
+| `/api/visitors`, `/[id]` | GET, POST, PATCH (`arrive`, `depart`, `deny`, `cancel`) | all (residents: own passes) |
+| `/api/admin/logs` | GET | admin |

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { ParkingSlot } from '@/models';
+import { ParkingSlot, type IParkingSlot } from '@/models';
 import { requireAuth, requireRole } from '@/lib/rbac';
-import { createParkingSlotSchema } from '@/lib/validations';
+import { createParkingSlotSchema, normalizeSlotInput } from '@/lib/validations';
 
 // GET /api/parking-slots - Get all parking slots
 export async function GET(request: NextRequest) {
@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
 
     const slots = await ParkingSlot.find(query)
       .sort({ slotCode: 1 })
+      .populate('assignedUnitId', 'buildingName unitNumber')
       .lean();
 
     // Group by building for easier frontend use
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const data = validationResult.data;
+    const data = normalizeSlotInput(validationResult.data) as typeof validationResult.data;
 
     // Check if slot already exists
     const existingSlot = await ParkingSlot.findOne({ slotCode: data.slotCode });
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const slot = await ParkingSlot.create(data);
+    const slot = await ParkingSlot.create(data as unknown as Partial<IParkingSlot>);
 
     return NextResponse.json(
       { success: true, data: slot },

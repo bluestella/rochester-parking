@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import connectDB from '@/lib/mongodb';
+import { like } from '@/lib/api';
 import { User, AuditLog } from '@/models';
 import { requireRole } from '@/lib/rbac';
 import { createUserSchema, paginationSchema } from '@/lib/validations';
@@ -44,8 +45,8 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
+        { name: like(search) },
+        { email: like(search) },
       ];
     }
 

@@ -87,7 +87,7 @@ export function ExportReportButton() {
       <DialogTrigger asChild>
         <Button variant="outline">
           <FileDown className="h-4 w-4 mr-2" />
-          Export Report
+          Export report
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

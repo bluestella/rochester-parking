@@ -204,7 +204,7 @@ export function EquipmentTable({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleDelete(equipment)}
-                          className="text-red-600"
+                          className="text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete

@@ -42,6 +42,9 @@ interface ParkingSlot {
   slotCode: string;
   buildingName: string;
   floor: string;
+  type?: string;
+  monthlyFee?: number | null;
+  assignedUnitId?: string | null;
   isOccupied: boolean;
   currentVehicle?: string;
   createdAt: string;
@@ -186,7 +189,10 @@ export function ParkingSlotTable({
               slots.map((slot) => (
                 <TableRow key={slot._id}>
                   <TableCell className="font-medium">{slot.slotCode}</TableCell>
-                  <TableCell>{slot.floor}</TableCell>
+                  <TableCell>
+                    {slot.floor}
+                    <span className="block text-xs capitalize text-muted-foreground">{slot.type === 'pwd' ? 'PWD' : slot.type ?? 'visitor'}</span>
+                  </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {slot.currentVehicle || '-'}
                   </TableCell>
@@ -195,9 +201,9 @@ export function ParkingSlotTable({
                   </TableCell>
                   <TableCell>
                     {slot.isOccupied ? (
-                      <Badge className="bg-red-100 text-red-800">Occupied</Badge>
+                      <Badge variant="info">Occupied</Badge>
                     ) : (
-                      <Badge className="bg-green-100 text-green-800">Available</Badge>
+                      <Badge variant="success">Available</Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -214,7 +220,7 @@ export function ParkingSlotTable({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleDelete(slot)}
-                          className="text-red-600"
+                          className="text-destructive"
                           disabled={slot.isOccupied}
                         >
                           <Trash2 className="h-4 w-4 mr-2" />

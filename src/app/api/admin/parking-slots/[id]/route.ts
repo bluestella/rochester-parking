@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import connectDB from '@/lib/mongodb';
 import { ParkingSlot, AuditLog } from '@/models';
 import { requireRole } from '@/lib/rbac';
-import { updateParkingSlotSchema } from '@/lib/validations';
+import { updateParkingSlotSchema, normalizeSlotInput } from '@/lib/validations';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -72,7 +72,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const data = validationResult.data;
+    const data = normalizeSlotInput(validationResult.data) as typeof validationResult.data;
 
     // Check if slot exists
     const existingSlot = await ParkingSlot.findById(id);
@@ -94,7 +94,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    const slot = await ParkingSlot.findByIdAndUpdate(id, data, { new: true });
+    const slot = await ParkingSlot.findByIdAndUpdate(id, data, { returnDocument: 'after' });
 
     // Create audit log
     await AuditLog.create({

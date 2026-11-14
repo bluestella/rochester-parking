@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
+import { like } from '@/lib/api';
 import { Equipment, AuditLog } from '@/models';
 import { requireRole } from '@/lib/rbac';
 import { createEquipmentSchema, paginationSchema } from '@/lib/validations';
@@ -32,10 +33,10 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       query.$or = [
-        { equipmentId: { $regex: search, $options: 'i' } },
-        { make: { $regex: search, $options: 'i' } },
-        { equipmentModel: { $regex: search, $options: 'i' } },
-        { operatorDetails: { $regex: search, $options: 'i' } },
+        { equipmentId: like(search) },
+        { make: like(search) },
+        { equipmentModel: like(search) },
+        { operatorDetails: like(search) },
       ];
     }
 

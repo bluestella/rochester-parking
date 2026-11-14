@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    const equipment = await Equipment.findByIdAndUpdate(id, data, { new: true });
+    const equipment = await Equipment.findByIdAndUpdate(id, data, { returnDocument: 'after' });
 
     // Create audit log
     await AuditLog.create({
